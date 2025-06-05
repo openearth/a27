@@ -1,15 +1,15 @@
 <template>
   <v-app>
-    <v-app-bar app>
-      <v-toolbar-title>My App</v-toolbar-title>
-    </v-app-bar>
+    <v-main style="height: 100vh;">
+      <v-app-bar app>
+        <v-toolbar-title>a27</v-toolbar-title>
+      </v-app-bar>
 
-    <v-navigation-drawer v-model="drawer" app permanent>
+      <v-navigation-drawer v-model="drawer" app permanent>
       <!-- Navigation items -->
-    </v-navigation-drawer>
+      </v-navigation-drawer>
 
-    <v-main>
-      <router-view />
+      <map-component />
     </v-main>
   </v-app>
 </template>

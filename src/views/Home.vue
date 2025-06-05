@@ -1,5 +1,5 @@
 <template>
-  <HelloWorld />
+  <map-component />
 </template>
 
 <script setup>
