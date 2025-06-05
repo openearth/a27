@@ -1,7 +1,7 @@
 <template>
   <div class="map-wrapper">
     <mapbox-map
-      access-token=""
+      :access-token="accessToken"
       :center="[4.7, 52.2]"
       map-style="mapbox://styles/mapbox/light-v11"
       :zoom="7"
@@ -11,6 +11,8 @@
 
 <script setup>
   import { MapboxMap } from '@studiometa/vue-mapbox-gl'
+
+  const accessToken = import.meta.env.VITE_MAPBOX_TOKEN
 </script>
 <style>
 .map-wrapper,

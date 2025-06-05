@@ -4,9 +4,7 @@
       <v-toolbar-title>a27</v-toolbar-title>
     </v-app-bar>
 
-    <v-navigation-drawer v-model="drawer" app permanent>
-      <!-- Navigation items -->
-    </v-navigation-drawer>
+    <v-navigation-drawer v-model="drawer" app permanent />
 
     <v-main>
       <map-component />
@@ -17,7 +15,7 @@
   export default {
     data () {
       return {
-        drawer: true, // Controls the visibility of the navigation drawer
+        drawer: true,
       }
     },
   }
