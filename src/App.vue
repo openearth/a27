@@ -6,18 +6,18 @@
 
     <v-main>
       <map-component />
-      <div class="app-panel" />
+      <div class="app-panel" :class="{ collapsed: panelIsCollapsed }" />
     </v-main>
   </v-app>
 </template>
-<script>
-  export default {
-    data () {
-      return {
-        drawer: true,
-      }
-    },
-  }
+<script setup>
+
+  import { computed } from 'vue'
+  import { useAppStore } from '@/stores/app'
+
+  const appStore = useAppStore()
+  const panelIsCollapsed = computed(() => appStore.panelIsCollapsed)
+
 </script>
 
 <style scoped>
@@ -30,6 +30,11 @@
   overflow: hidden;
   background-color: #fff;
   box-shadow: 0 -2px 8px 0px rgba(0, 0, 0, .3);
+  transition: transform 0.3s ease;
+}
+
+.app-panel.collapsed {
+  transform: translateY(100%);
 }
 
 </style>
