@@ -6,7 +6,17 @@
 
     <v-main>
       <map-component />
-      <div class="app-panel" :class="{ collapsed: panelIsCollapsed }" />
+      <div class="app-panel" :class="{ collapsed: panelIsCollapsed }">
+        <v-btn
+          class="app-panel__minimize"
+          flat
+          icon
+          title="Minimaliseer"
+          @click="onClick"
+        >
+          <v-icon>mdi-chevron-down</v-icon>
+        </v-btn>
+      </div>
     </v-main>
   </v-app>
 </template>
@@ -17,6 +27,10 @@
 
   const appStore = useAppStore()
   const panelIsCollapsed = computed(() => appStore.panelIsCollapsed)
+
+  function onClick () {
+    appStore.collapsePanel()
+  }
 
 </script>
 
@@ -35,6 +49,13 @@
 
 .app-panel.collapsed {
   transform: translateY(100%);
+}
+
+.app-panel__minimize {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 8px;
 }
 
 </style>

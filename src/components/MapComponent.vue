@@ -22,6 +22,7 @@
     appStore.expandPanel()
   }
 </script>
+
 <style>
 .map-wrapper,
 .map-wrapper .mapboxgl-map {
