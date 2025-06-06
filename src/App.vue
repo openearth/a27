@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-app-bar app>
+    <v-app-bar app color="primary">
       <v-toolbar-title>a27</v-toolbar-title>
     </v-app-bar>
 
@@ -16,6 +16,13 @@
         >
           <v-icon>mdi-chevron-down</v-icon>
         </v-btn>
+        <div class="details d-flex flex-row">
+          <div class="details__column">
+            <h3 class="text-h6">
+              Details meetlocatie XXX
+            </h3>
+          </div>
+        </div>
       </div>
     </v-main>
   </v-app>
@@ -38,6 +45,7 @@
 
 .app-panel {
   position: fixed;
+  z-index: 2;
   bottom: 0;
   width: 100%;
   height: 66vh;
@@ -56,6 +64,25 @@
   top: 0;
   right: 0;
   margin: 8px;
+}
+
+.details {
+  gap: 24px;
+  height: 100%;
+  padding: 24px 0;
+  overflow: hidden;
+}
+
+.details__column {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0 24px;
+  overflow: auto;
+}
+
+.details__column .text-h6 {
+  margin-bottom: 16px;
 }
 
 </style>
