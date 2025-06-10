@@ -21,6 +21,23 @@
             <h3 class="text-h6">
               Details meetlocatie XXX
             </h3>
+            <div>
+              <v-table>
+                <tbody>
+                  <tr>
+                    <td>Naam</td>
+                    <td>XXX</td>
+                  </tr>
+                  <tr>
+                    <td>Coördinaten (EPSG:28992)</td>
+                    <td>XXX</td>
+                  </tr>
+                  <tr>
+                    <td colspan="2">XXX</td>
+                  </tr>
+                </tbody>
+              </v-table>
+            </div>
           </div>
         </div>
       </div>
