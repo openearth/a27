@@ -39,3 +39,11 @@
     </mapbox-map>
   </div>
 </template>
+
+<style>
+.map-wrapper,
+.map-wrapper .mapboxgl-map {
+  width: 100%;
+  height: 100%;
+}
+</style>
