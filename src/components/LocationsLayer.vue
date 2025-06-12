@@ -1,7 +1,3 @@
-<template>
-  <!-- logic-only; no UI rendering -->
-</template>
-
 <script setup>
   import { computed, watch } from 'vue'
   import { useLocationsStore } from '@/stores/locations'
