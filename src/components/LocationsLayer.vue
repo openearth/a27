@@ -1,3 +1,7 @@
+<template>
+
+</template>
+
 <script setup>
   import { computed, watch } from 'vue'
   import { useLocationsStore } from '@/stores/locations'

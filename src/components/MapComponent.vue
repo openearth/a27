@@ -29,9 +29,9 @@
     <mapbox-map
       v-model:map="mapInstance"
       :access-token="accessToken"
-      :center="[4.7, 52.2]"
+      :center="[5.1, 52.07]"
       map-style="mapbox://styles/mapbox/light-v11"
-      :zoom="7"
+      :zoom="10.5"
       @mb-click="handleMapClick"
       @mb-created="onMapCreated"
     >
