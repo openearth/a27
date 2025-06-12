@@ -2,7 +2,6 @@
   import { MapboxMap } from '@studiometa/vue-mapbox-gl'
   import { ref } from 'vue'
   import LocationsLayer from '@/components/LocationsLayer.vue'
-  import { useAppStore } from '@/stores/app'
   import { useLocationsStore } from '@/stores/locations'
 
   const accessToken = import.meta.env.VITE_MAPBOX_TOKEN
