@@ -4,6 +4,7 @@
 
 <script setup>
   import { computed, watch } from 'vue'
+  import { useAppStore } from '@/stores/app'
   import { useLocationsStore } from '@/stores/locations'
 
   const props = defineProps({
@@ -11,6 +12,7 @@
   })
 
   const locationsStore = useLocationsStore()
+  const appStore = useAppStore()
   const sourceId = 'locations-source'
   const layerId = 'locations-layer'
 
@@ -18,6 +20,8 @@
     type: 'FeatureCollection',
     features: locationsStore.locations,
   }))
+
+  const panelIsCollapsed = computed(() => appStore.panelIsCollapsed)
 
   watch(
     () => locationsStore.locations,
@@ -52,6 +56,21 @@
         })
         console.log('🗺️ Locations layer added')
       }
+
+      map.on('click', 'locations-layer', e => {
+        const feature = e.features?.[0]
+        if (feature) {
+          console.log('Location clicked:', feature.properties)
+          appStore.expandPanel()
+        }
+      })
+
+      map.on('mouseenter', 'locations-layer', () => {
+        map.getCanvas().style.cursor = 'pointer'
+      })
+      map.on('mouseleave', 'locations-layer', () => {
+        map.getCanvas().style.cursor = ''
+      })
     },
     { immediate: true },
   )

@@ -6,13 +6,8 @@
   import { useLocationsStore } from '@/stores/locations'
 
   const accessToken = import.meta.env.VITE_MAPBOX_TOKEN
-  const appStore = useAppStore()
   const locationsStore = useLocationsStore()
   const mapInstance = ref(null)
-
-  function handleMapClick () {
-    appStore.expandPanel()
-  }
 
   function onMapCreated (map) {
     console.log('📍 Map instance created', map)
@@ -32,7 +27,6 @@
       :center="[5.1, 52.07]"
       map-style="mapbox://styles/mapbox/light-v11"
       :zoom="10.5"
-      @mb-click="handleMapClick"
       @mb-created="onMapCreated"
     >
       <LocationsLayer :map="mapInstance" />
