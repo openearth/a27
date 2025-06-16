@@ -61,6 +61,7 @@
         const feature = e.features?.[0]
         if (feature) {
           console.log('Location clicked:', feature.properties)
+          locationsStore.setActiveLocation(feature)
           appStore.expandPanel()
         }
       })

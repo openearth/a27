@@ -19,7 +19,7 @@
         <div class="details d-flex flex-row">
           <div class="details__column">
             <h3 class="text-h6">
-              Details meetlocatie XXX
+              Details meetlocatie {{ locationsStore.activeLocation?.properties?.id || '...' }}
             </h3>
             <div>
               <v-table>
@@ -48,8 +48,11 @@
 
   import { computed } from 'vue'
   import { useAppStore } from '@/stores/app'
+  import { useLocationsStore } from '@/stores/locations'
 
   const appStore = useAppStore()
+  const locationsStore = useLocationsStore()
+
   const panelIsCollapsed = computed(() => appStore.panelIsCollapsed)
 
   function onClick () {
