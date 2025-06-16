@@ -26,11 +26,14 @@
                 <tbody>
                   <tr>
                     <td>Naam</td>
-                    <td>XXX</td>
+                    <td>{{ locationsStore.activeLocation?.properties?.id || '...' }}</td>
                   </tr>
                   <tr>
-                    <td>Coördinaten (EPSG:28992)</td>
-                    <td>XXX</td>
+                    <td>Coördinaten (EPSG:4326)</td>
+                    <td>
+                      {{ locationsStore.activeLocation?.geometry?.coordinates?.[0].toFixed(6) }},
+                      {{ locationsStore.activeLocation?.geometry?.coordinates?.[1].toFixed(6) }}
+                    </td>
                   </tr>
                   <tr>
                     <td colspan="2">XXX</td>
