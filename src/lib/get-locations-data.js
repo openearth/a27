@@ -7,7 +7,7 @@ export default async function getLocationsData () {
   }
 
   const data = await response.json() // Direct GeoJSON
-  console.log(data)
+  console.log('data', data)
 
   return data // Already a FeatureCollection
 }
