@@ -19,14 +19,14 @@
         <div class="details d-flex flex-row">
           <div class="details__column">
             <h3 class="text-h6">
-              Details meetlocatie {{ locationsStore.activeLocation?.properties?.id || '...' }}
+              Details meetlocatie {{ locationsStore.activeLocation?.properties?.locatie_id || '...' }}
             </h3>
             <div>
               <v-table>
                 <tbody>
                   <tr>
                     <td>Naam</td>
-                    <td>{{ locationsStore.activeLocation?.properties?.id || '...' }}</td>
+                    <td>{{ locationsStore.activeLocation?.properties?.locatie_id || '...' }}</td>
                   </tr>
                   <tr>
                     <td>Coördinaten (EPSG:4326)</td>
@@ -36,7 +36,10 @@
                     </td>
                   </tr>
                   <tr>
-                    <td colspan="2">XXX</td>
+                    <td>Beschikbare peilfilters</td>
+                    <td>
+                      {{ locationsStore.activeLocation?.properties?.peilfilter_ids || 'Geen peilfiler' }}
+                    </td>
                   </tr>
                 </tbody>
               </v-table>
