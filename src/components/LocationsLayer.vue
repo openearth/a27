@@ -79,6 +79,17 @@
           console.log('Location clicked:', feature.properties)
           locationsStore.setActiveLocation(feature)
           appStore.expandPanel()
+
+          const coords = feature.geometry.coordinates
+          const canvas = map.getCanvas()
+          const offsetY = canvas.height * 0.25
+
+          map.flyTo({
+            center: coords,
+            zoom: 12.5,
+            speed: 1.2,
+            offset: [0, -offsetY],
+          })
         }
       })
 

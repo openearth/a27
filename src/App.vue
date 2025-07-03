@@ -74,7 +74,7 @@
   z-index: 2;
   bottom: 0;
   width: 100%;
-  height: 66vh;
+  height: 50vh;
   overflow: hidden;
   background-color: #fff;
   box-shadow: 0 -2px 8px 0px rgba(0, 0, 0, .3);
