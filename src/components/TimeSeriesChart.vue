@@ -5,10 +5,11 @@
 <script setup>
   import * as echarts from 'echarts'
   import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+  import getTimeseriesData from '@/lib/get-timeseries-data'
 
   const props = defineProps({
     locationId: {
-      type: String,
+      type: [String, Number],
       default: null,
     },
   })
@@ -21,7 +22,7 @@
       chartInstance.dispose()
     }
     chartInstance = echarts.init(chartRef.value)
-    const option = {
+    chartInstance.setOption({
       title: {
         text: 'Time Series Data',
       },
@@ -30,57 +31,46 @@
       },
       xAxis: {
         type: 'category',
-        data: generateFakeDates(),
+        data: [],
       },
       yAxis: {
         type: 'value',
       },
       series: [{
-        name: 'Value',
+        name: 'Head',
         type: 'line',
-        data: generateFakeData(),
+        data: [],
       }],
-    }
-    chartInstance.setOption(option)
+    })
   }
 
-  function generateFakeDates () {
-    // Generate 10 fake date strings
-    const dates = []
-    const now = new Date()
-    for (let i = 9; i >= 0; i--) {
-      const d = new Date(now)
-      d.setDate(d.getDate() - i)
-      dates.push(d.toISOString().slice(0, 10))
+  async function loadData (peilfilterId) {
+    try {
+      const data = await getTimeseriesData(peilfilterId)
+      const timeseries = data.timeseries || []
+      const xData = timeseries.map(t => t.datetime)
+      const yData = timeseries.map(t => t.head)
+      chartInstance.setOption({
+        xAxis: {
+          data: xData,
+        },
+        series: [{
+          data: yData,
+        }],
+      })
+    } catch (error) {
+      console.error('Error loading timeseries data:', error)
     }
-    return dates
-  }
-
-  function generateFakeData () {
-    return Array.from({ length: 10 }, () => Math.round(Math.random() * 100))
   }
 
   onMounted(() => {
     initChart()
+    loadData(530) // single hardcoded peilfilter id for now
   })
 
   onBeforeUnmount(() => {
     if (chartInstance) {
       chartInstance.dispose()
-    }
-  })
-
-  watch(() => props.locationId, () => {
-    // For now we just regenerate fake data when location changes
-    if (chartInstance) {
-      chartInstance.setOption({
-        xAxis: {
-          data: generateFakeDates(),
-        },
-        series: [{
-          data: generateFakeData(),
-        }],
-      })
     }
   })
 </script>
