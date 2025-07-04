@@ -37,7 +37,14 @@
                 <tr>
                   <td>Beschikbare peilfilters</td>
                   <td>
-                    {{ locationsStore.activeLocation?.properties?.peilfilter_ids || 'Geen peilfiler' }}
+                    <v-select
+                      v-model="selectedPeilfilterId"
+                      dense
+                      hide-details
+                      :items="peilfilterOptions"
+                      outlined
+                      style="max-width: 200px"
+                    />
                   </td>
                 </tr>
               </tbody>
@@ -45,7 +52,7 @@
           </div>
 
           <div class="details__column details__chart">
-            <TimeSeriesChart :peilfilter-id="firstPeilfilterId" />
+            <TimeSeriesChart :peilfilter-id="selectedPeilfilterId" />
           </div>
         </div>
       </div>
@@ -54,7 +61,7 @@
 </template>
 <script setup>
 
-  import { computed } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import TimeSeriesChart from '@/components/TimeSeriesChart.vue'
   import { useAppStore } from '@/stores/app'
   import { useLocationsStore } from '@/stores/locations'
@@ -71,15 +78,30 @@
   const firstPeilfilterId = computed(() => {
     const ids = locationsStore.activeLocation?.properties?.peilfilter_ids
     if (!ids) return null
-    if (Array.isArray(ids)) {
-      return ids[0]
-    }
+
     if (typeof ids === 'string') {
-      // Support comma separated
       return ids.split(',')[0].trim()
     }
     return null
   })
+
+  const selectedPeilfilterId = ref(null)
+
+  const peilfilterOptions = computed(() => {
+    const ids = locationsStore.activeLocation?.properties?.peilfilter_ids
+    if (!ids) return []
+    return ids.split(',').map(id => id.trim())
+  })
+
+  // Update selectedPeilfilterId when activeLocation changes
+  watch(() => locationsStore.activeLocation, newLocation => {
+    if (newLocation) {
+      const options = peilfilterOptions.value
+      selectedPeilfilterId.value = options.length > 0 ? options[0] : null
+    } else {
+      selectedPeilfilterId.value = null
+    }
+  }, { immediate: true })
 
 </script>
 
