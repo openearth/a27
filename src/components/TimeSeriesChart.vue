@@ -8,7 +8,7 @@
   import getTimeseriesData from '@/lib/get-timeseries-data'
 
   const props = defineProps({
-    locationId: {
+    peilfilterId: {
       type: [String, Number],
       default: null,
     },
@@ -65,7 +65,9 @@
 
   onMounted(() => {
     initChart()
-    loadData(530) // single hardcoded peilfilter id for now
+    if (props.peilfilterId) {
+      loadData(props.peilfilterId)
+    }
   })
 
   onBeforeUnmount(() => {
@@ -73,6 +75,16 @@
       chartInstance.dispose()
     }
   })
+
+  watch(
+    () => props.peilfilterId,
+    newId => {
+      if (newId) {
+        loadData(newId)
+      }
+    },
+  )
+
 </script>
 
 <style scoped>

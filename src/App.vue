@@ -45,7 +45,7 @@
           </div>
 
           <div class="details__column details__chart">
-            <TimeSeriesChart :location-id="locationsStore.activeLocation?.properties?.locatie_id" />
+            <TimeSeriesChart :peilfilter-id="firstPeilfilterId" />
           </div>
         </div>
       </div>
@@ -67,6 +67,19 @@
   function onClick () {
     appStore.collapsePanel()
   }
+
+  const firstPeilfilterId = computed(() => {
+    const ids = locationsStore.activeLocation?.properties?.peilfilter_ids
+    if (!ids) return null
+    if (Array.isArray(ids)) {
+      return ids[0]
+    }
+    if (typeof ids === 'string') {
+      // Support comma separated
+      return ids.split(',')[0].trim()
+    }
+    return null
+  })
 
 </script>
 
