@@ -17,33 +17,35 @@
           <v-icon>mdi-chevron-down</v-icon>
         </v-btn>
         <div class="details d-flex flex-row">
-          <div class="details__column">
+          <div class="details__column details__table">
             <h3 class="text-h6">
               Details meetlocatie {{ locationsStore.activeLocation?.properties?.locatie_id || '...' }}
             </h3>
-            <div>
-              <v-table>
-                <tbody>
-                  <tr>
-                    <td>Naam</td>
-                    <td>{{ locationsStore.activeLocation?.properties?.locatie_id || '...' }}</td>
-                  </tr>
-                  <tr>
-                    <td>Coördinaten (EPSG:4326)</td>
-                    <td>
-                      {{ locationsStore.activeLocation?.geometry?.coordinates?.[0].toFixed(6) }},
-                      {{ locationsStore.activeLocation?.geometry?.coordinates?.[1].toFixed(6) }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Beschikbare peilfilters</td>
-                    <td>
-                      {{ locationsStore.activeLocation?.properties?.peilfilter_ids || 'Geen peilfiler' }}
-                    </td>
-                  </tr>
-                </tbody>
-              </v-table>
-            </div>
+            <v-table>
+              <tbody>
+                <tr>
+                  <td>Naam</td>
+                  <td>{{ locationsStore.activeLocation?.properties?.locatie_id || '...' }}</td>
+                </tr>
+                <tr>
+                  <td>Coördinaten (EPSG:4326)</td>
+                  <td>
+                    {{ locationsStore.activeLocation?.geometry?.coordinates?.[0].toFixed(6) }},
+                    {{ locationsStore.activeLocation?.geometry?.coordinates?.[1].toFixed(6) }}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Beschikbare peilfilters</td>
+                  <td>
+                    {{ locationsStore.activeLocation?.properties?.peilfilter_ids || 'Geen peilfiler' }}
+                  </td>
+                </tr>
+              </tbody>
+            </v-table>
+          </div>
+
+          <div class="details__column details__chart">
+            <TimeSeriesChart :location-id="locationsStore.activeLocation?.properties?.locatie_id" />
           </div>
         </div>
       </div>
@@ -53,6 +55,7 @@
 <script setup>
 
   import { computed } from 'vue'
+  import TimeSeriesChart from '@/components/TimeSeriesChart.vue'
   import { useAppStore } from '@/stores/app'
   import { useLocationsStore } from '@/stores/locations'
 
@@ -93,6 +96,7 @@
 }
 
 .details {
+  display: flex;
   gap: 24px;
   height: 100%;
   padding: 24px 0;
@@ -109,6 +113,16 @@
 
 .details__column .text-h6 {
   margin-bottom: 16px;
+}
+
+.details__table {
+  flex: 0 0 auto;
+  width: 400px;
+}
+
+.details__chart {
+  flex: 1 1 0;
+  overflow: hidden;
 }
 
 </style>
