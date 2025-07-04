@@ -12,5 +12,6 @@ declare module 'vue' {
     MapComponent: typeof import('./src/components/MapComponent.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    TimeSeriesChart: typeof import('./src/components/TimeSeriesChart.vue')['default']
   }
 }
