@@ -1,11 +1,23 @@
-export default async function getTimeseriesData (peilfilterId = 530) {
-  const url = `https://a27.openearth.nl/wps?service=wps&request=Execute&version=2.0.0&Identifier=wps_get_peilfilter_data&datainputs=peilfilterinfo=${encodeURIComponent(
-    JSON.stringify({
-      peilfilterid: peilfilterId,
-      start_date: '',
-      end_date: '',
-    }),
-  )}`
+import geoServerUrl from './geoserver-url'
+
+export default async function getTimeseriesData (peilfilterId) {
+  if (!peilfilterId) {
+    throw new Error('No peilfilterId provided to getTimeseriesData')
+  }
+  const peilfilterinfo = JSON.stringify({
+    peilfilterid: peilfilterId,
+    start_date: '',
+    end_date: '',
+  })
+
+  const url = geoServerUrl({
+    url: import.meta.env.VITE_GEOSERVER_BASE_URL + '/wps',
+    request: 'Execute',
+    service: 'wps',
+    version: '2.0.0',
+    Identifier: 'wps_get_peilfilter_data',
+    datainputs: `peilfilterinfo=${peilfilterinfo}`,
+  })
 
   return fetch(url)
     .then(response => response.text())
