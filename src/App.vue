@@ -72,18 +72,9 @@
   const panelIsCollapsed = computed(() => appStore.panelIsCollapsed)
 
   function onClick () {
+    console.log('clicked')
     appStore.collapsePanel()
   }
-
-  const firstPeilfilterId = computed(() => {
-    const ids = locationsStore.activeLocation?.properties?.peilfilter_ids
-    if (!ids) return null
-
-    if (typeof ids === 'string') {
-      return ids.split(',')[0].trim()
-    }
-    return null
-  })
 
   const selectedPeilfilterId = ref(null)
 
