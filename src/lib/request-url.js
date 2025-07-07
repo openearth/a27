@@ -1,10 +1,10 @@
 import queryString from 'query-string'
 
 /**
- * Create a GeoServer url.
+ * Create a request url.
  *
  * @param {object} options - The options object.
- * @returns {string} - The GeoServer url.
+ * @returns {string} - The request url.
  */
 export default function ({ url, service, request, encode = true, ...rest }) {
   if (!request) {

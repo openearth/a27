@@ -1,8 +1,8 @@
-import geoServerUrl from './geoserver-url'
+import requestUrl from './request-url'
 
 export default async function getLocationsData () {
-  const url = geoServerUrl({
-    url: import.meta.env.VITE_GEOSERVER_BASE_URL + '/wps',
+  const url = requestUrl({
+    url: import.meta.env.VITE_APP_BASE_URL + '/wps',
     request: 'Execute',
     service: 'wps',
     version: '2.0.0',
