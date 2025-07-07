@@ -119,6 +119,7 @@
   top: 0;
   right: 0;
   margin: 8px;
+  z-index: 1;
 }
 
 .details {
@@ -149,6 +150,7 @@
 .details__chart {
   flex: 1 1 0;
   overflow: hidden;
+  position: relative;
 }
 
 </style>
