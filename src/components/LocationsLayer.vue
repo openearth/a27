@@ -55,6 +55,22 @@
           },
         })
         console.log('🗺️ Locations layer added')
+
+        map.addSource('active-location', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: [] },
+        })
+        map.addLayer({
+          id: 'active-location-layer',
+          type: 'circle',
+          source: 'active-location',
+          paint: {
+            'circle-color': '#fff',
+            'circle-radius': 5,
+            'circle-stroke-width': 5.5,
+            'circle-stroke-color': '#ff0000',
+          },
+        })
       }
 
       map.on('click', 'locations-layer', e => {
@@ -63,6 +79,17 @@
           console.log('Location clicked:', feature.properties)
           locationsStore.setActiveLocation(feature)
           appStore.expandPanel()
+
+          const coords = feature.geometry.coordinates
+          const canvas = map.getCanvas()
+          const offsetY = canvas.height * 0.25
+
+          map.flyTo({
+            center: coords,
+            zoom: 12.5,
+            speed: 1.2,
+            offset: [0, -offsetY],
+          })
         }
       })
 
@@ -72,6 +99,28 @@
       map.on('mouseleave', 'locations-layer', () => {
         map.getCanvas().style.cursor = ''
       })
+    },
+    { immediate: true },
+  )
+
+  watch(
+    () => locationsStore.activeLocation,
+    activeLocation => {
+      const map = props.map
+      if (!map || !map.getSource('active-location')) return
+
+      if (activeLocation) {
+        const plainFeature = JSON.parse(JSON.stringify(activeLocation))
+        map.getSource('active-location').setData({
+          type: 'FeatureCollection',
+          features: [plainFeature],
+        })
+      } else {
+        map.getSource('active-location').setData({
+          type: 'FeatureCollection',
+          features: [],
+        })
+      }
     },
     { immediate: true },
   )

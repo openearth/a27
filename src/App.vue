@@ -17,30 +17,42 @@
           <v-icon>mdi-chevron-down</v-icon>
         </v-btn>
         <div class="details d-flex flex-row">
-          <div class="details__column">
+          <div class="details__column details__table">
             <h3 class="text-h6">
-              Details meetlocatie {{ locationsStore.activeLocation?.properties?.id || '...' }}
+              Details meetlocatie {{ locationsStore.activeLocation?.properties?.locatie_id || '...' }}
             </h3>
-            <div>
-              <v-table>
-                <tbody>
-                  <tr>
-                    <td>Naam</td>
-                    <td>{{ locationsStore.activeLocation?.properties?.id || '...' }}</td>
-                  </tr>
-                  <tr>
-                    <td>Coördinaten (EPSG:4326)</td>
-                    <td>
-                      {{ locationsStore.activeLocation?.geometry?.coordinates?.[0].toFixed(6) }},
-                      {{ locationsStore.activeLocation?.geometry?.coordinates?.[1].toFixed(6) }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td colspan="2">XXX</td>
-                  </tr>
-                </tbody>
-              </v-table>
-            </div>
+            <v-table>
+              <tbody>
+                <tr>
+                  <td>Naam</td>
+                  <td>{{ locationsStore.activeLocation?.properties?.locatie_id || '...' }}</td>
+                </tr>
+                <tr>
+                  <td>Coördinaten (EPSG:4326)</td>
+                  <td>
+                    {{ locationsStore.activeLocation?.geometry?.coordinates?.[0].toFixed(6) }},
+                    {{ locationsStore.activeLocation?.geometry?.coordinates?.[1].toFixed(6) }}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Beschikbare peilfilters</td>
+                  <td>
+                    <v-select
+                      v-model="selectedPeilfilterId"
+                      dense
+                      hide-details
+                      :items="peilfilterOptions"
+                      outlined
+                      style="max-width: 200px"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </v-table>
+          </div>
+
+          <div class="details__column details__chart">
+            <TimeSeriesChart :peilfilter-id="selectedPeilfilterId" />
           </div>
         </div>
       </div>
@@ -49,7 +61,8 @@
 </template>
 <script setup>
 
-  import { computed } from 'vue'
+  import { computed, ref, watch } from 'vue'
+  import TimeSeriesChart from '@/components/TimeSeriesChart.vue'
   import { useAppStore } from '@/stores/app'
   import { useLocationsStore } from '@/stores/locations'
 
@@ -59,8 +72,27 @@
   const panelIsCollapsed = computed(() => appStore.panelIsCollapsed)
 
   function onClick () {
+    console.log('clicked')
     appStore.collapsePanel()
   }
+
+  const selectedPeilfilterId = ref(null)
+
+  const peilfilterOptions = computed(() => {
+    const ids = locationsStore.activeLocation?.properties?.peilfilter_ids
+    if (!ids) return []
+    return ids.split(',').map(id => id.trim())
+  })
+
+  // Update selectedPeilfilterId when activeLocation changes
+  watch(() => locationsStore.activeLocation, newLocation => {
+    if (newLocation) {
+      const options = peilfilterOptions.value
+      selectedPeilfilterId.value = options.length > 0 ? options[0] : null
+    } else {
+      selectedPeilfilterId.value = null
+    }
+  }, { immediate: true })
 
 </script>
 
@@ -71,7 +103,7 @@
   z-index: 2;
   bottom: 0;
   width: 100%;
-  height: 66vh;
+  height: 50vh;
   overflow: hidden;
   background-color: #fff;
   box-shadow: 0 -2px 8px 0px rgba(0, 0, 0, .3);
@@ -87,9 +119,11 @@
   top: 0;
   right: 0;
   margin: 8px;
+  z-index: 1;
 }
 
 .details {
+  display: flex;
   gap: 24px;
   height: 100%;
   padding: 24px 0;
@@ -106,6 +140,17 @@
 
 .details__column .text-h6 {
   margin-bottom: 16px;
+}
+
+.details__table {
+  flex: 0 0 auto;
+  width: 400px;
+}
+
+.details__chart {
+  flex: 1 1 0;
+  overflow: hidden;
+  position: relative;
 }
 
 </style>
