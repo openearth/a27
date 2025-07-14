@@ -1,38 +1,21 @@
-import requestUrl from './request-url'
+import sendWpsRequest from '@/lib/wps'
 
 export default async function getLocationsData () {
-  const url = requestUrl({
-    url: import.meta.env.VITE_APP_BASE_URL + '/wps',
-    request: 'Execute',
-    service: 'wps',
-    version: '2.0.0',
-    Identifier: 'wps_get_locations',
-  })
-
-  return fetch(url)
-    .then(response => response.text())
-    .then(string => {
-      const document = new window.DOMParser().parseFromString(string, 'text/xml')
-
-      // ✅ fallback to tagName, not namespace
-      const method = 'getElementsByTagName'
-      const element = document[method]('wps:ComplexData')
-
-      if (element.length === 0) {
-        console.warn('No <wps:ComplexData> found. Raw XML:', string)
-        throw new Error('No <wps:ComplexData> element found')
-      }
-
-      const value = JSON.parse(element[0].textContent)
-
-      if (value.errMsg) {
-        throw new Error(value.errMsg)
-      }
-
-      return value
+  try {
+    const response = await sendWpsRequest({
+      identifier: 'wps_get_locations',
+      inputs: [],
+      outputIdentifier: 'locations',
+      mimeType: 'application/json',
     })
-    .catch(error => {
-      console.error('Failed to fetch locations:', error)
-      throw error
-    })
+
+    if (response.errMsg) {
+      throw new Error(response.errMsg)
+    }
+
+    return response
+  } catch (error) {
+    console.error('Failed to fetch locations:', error)
+    throw error
+  }
 }

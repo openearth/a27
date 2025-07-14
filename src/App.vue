@@ -72,7 +72,6 @@
   const panelIsCollapsed = computed(() => appStore.panelIsCollapsed)
 
   function onClick () {
-    console.log('clicked')
     appStore.collapsePanel()
   }
 
