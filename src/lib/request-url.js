@@ -14,5 +14,5 @@ export default function ({ url, service, request, encode = true, ...rest }) {
   const options = { encode, sort: false }
   const params = queryString.stringify({ service, request, ...rest }, options)
 
-  return `${url}?${params}`
+  return `${ url }?${ params }`
 }

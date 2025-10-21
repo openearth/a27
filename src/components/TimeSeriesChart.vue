@@ -47,7 +47,6 @@
   async function loadData (peilfilterId) {
     try {
       const data = await getTimeseriesData(peilfilterId)
-      console.log('📊 Loaded timeseries data:', data)
       const timeseries = data.timeseries || []
       const xData = timeseries.map(t => t.datetime)
       const yData = timeseries.map(t => t.head)

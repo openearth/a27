@@ -1,27 +1,21 @@
 <template>
-
+  <div />
 </template>
 
 <script setup>
-  import { computed, watch } from 'vue'
+  import { watch } from 'vue'
   import { useAppStore } from '@/stores/app'
   import { useLocationsStore } from '@/stores/locations'
 
   const props = defineProps({
-    map: Object,
+    map: {
+      type: Object,
+      default: null,
+    },
   })
 
   const locationsStore = useLocationsStore()
   const appStore = useAppStore()
-  const sourceId = 'locations-source'
-  const layerId = 'locations-layer'
-
-  const geojson = computed(() => ({
-    type: 'FeatureCollection',
-    features: locationsStore.locations,
-  }))
-
-  const panelIsCollapsed = computed(() => appStore.panelIsCollapsed)
 
   watch(
     () => locationsStore.locations,
@@ -39,7 +33,6 @@
 
       if (map.getSource(sourceId)) {
         map.getSource(sourceId).setData(geojson)
-        console.log('🔄 Locations layer updated')
       } else {
         if (map.getLayer(layerId)) return
         map.addSource(sourceId, { type: 'geojson', data: geojson })
@@ -54,8 +47,6 @@
             'circle-stroke-color': '#008fc5',
           },
         })
-        console.log('🗺️ Locations layer added')
-
         map.addSource('active-location', {
           type: 'geojson',
           data: { type: 'FeatureCollection', features: [] },
@@ -76,7 +67,6 @@
       map.on('click', 'locations-layer', e => {
         const feature = e.features?.[0]
         if (feature) {
-          console.log('Location clicked:', feature.properties)
           locationsStore.setActiveLocation(feature)
           appStore.expandPanel()
 
