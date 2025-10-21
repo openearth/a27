@@ -1,27 +1,21 @@
 <template>
-
+  <div />
 </template>
 
 <script setup>
-  import { computed, watch } from 'vue'
+  import { watch } from 'vue'
   import { useAppStore } from '@/stores/app'
   import { useLocationsStore } from '@/stores/locations'
 
   const props = defineProps({
-    map: Object,
+    map: {
+      type: Object,
+      default: null,
+    },
   })
 
   const locationsStore = useLocationsStore()
   const appStore = useAppStore()
-  const sourceId = 'locations-source'
-  const layerId = 'locations-layer'
-
-  const geojson = computed(() => ({
-    type: 'FeatureCollection',
-    features: locationsStore.locations,
-  }))
-
-  const panelIsCollapsed = computed(() => appStore.panelIsCollapsed)
 
   watch(
     () => locationsStore.locations,
