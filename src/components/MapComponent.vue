@@ -9,11 +9,8 @@
   const mapInstance = ref(null)
 
   function onMapCreated (map) {
-    console.log('📍 Map instance created', map)
     mapInstance.value = map
-    // Fetch locations after creation
     locationsStore.fetchLocations().then(() => {
-      console.log('✅ Fetched locations', locationsStore.locations.length)
     })
   }
 </script>

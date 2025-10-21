@@ -18,10 +18,6 @@ export const useLocationsStore = defineStore('locations', {
     },
     setActiveLocation (feature) {
       this.activeLocation = feature
-
-      // Convert to plain object for logging
-      const plainFeature = JSON.parse(JSON.stringify(feature))
-      console.log('this.activeLocation (plain)', plainFeature)
     },
   },
 })
