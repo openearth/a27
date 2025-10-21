@@ -12,8 +12,8 @@ export default async function getTimeseriesData (peilfilterId, startDate = '', e
   try {
     const response = await sendWpsRequest({
       identifier: 'wps_get_peilfilter_data',
-      inputs: [{ id: 'peilfilterinfo', title: 'Peilfilterinfo as peilfilterId, StartDate and EndDate',
-        type: 'ComplexData', mimeType: 'application/json', value: peilfilterinfo }],
+      inputs: [ { id: 'peilfilterinfo', title: 'Peilfilterinfo as peilfilterId, StartDate and EndDate',
+        type: 'ComplexData', mimeType: 'application/json', value: peilfilterinfo } ],
       outputIdentifier: 'peilfilter_data',
       mimeType: 'application/json',
     })
