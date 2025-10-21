@@ -37,6 +37,18 @@ Always create branches with descriptive names that include the ticket/issue numb
 ### Branch Naming Convention
 - `feature/a27plat-XXX-description` - New features
 - `bugfix/a27plat-XXX-description` - Bug fixes
-- `hotfix/a27plat-XXX-description` - Critical fixes
-- `refactor/a27plat-XXX-description` - Code refactoring
+
+
+### Branch Strategy
+- **Major changes**: Create PR to `develop` branch
+  - New features
+  - Significant refactoring
+  - Breaking changes
+  - Complex bug fixes
+- **Small changes**: Create PR directly to `main` branch
+  - Minor bug fixes
+  - Documentation updates
+  - Small UI improvements
+  - Dependency updates
+
 
