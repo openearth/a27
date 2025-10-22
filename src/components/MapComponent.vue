@@ -1,5 +1,5 @@
 <script setup>
-  import { MapboxMap } from '@studiometa/vue-mapbox-gl'
+  import { MapboxMap, MapboxNavigationControl  } from '@studiometa/vue-mapbox-gl'
   import { ref } from 'vue'
   import LocationsLayer from '@/components/LocationsLayer.vue'
   import BasemapControl from '@/components/BasemapControl.vue'
@@ -29,6 +29,11 @@
     >
       <LocationsLayer :map="mapInstance" />
       
+      <MapboxNavigationControl 
+        :show-compass="false" 
+        position="bottom-right" 
+      />
+      
       <div class="map-controls">
         <BasemapControl 
           v-if="mapInstance" 
@@ -50,8 +55,8 @@
 
 .map-controls {
   position: absolute;
-  bottom: 20px;
-  right: 20px;
+  bottom: 90px;  
+  right: 10px;  
   z-index: 1000;
 }
 </style>
