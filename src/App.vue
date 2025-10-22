@@ -19,23 +19,39 @@
         <div class="details d-flex flex-row">
           <div class="details__column details__table">
             <h3 class="text-h6">
-              Details meetlocatie {{ locationsStore.activeLocation?.properties?.locatie_id || '...' }}
+              Details meetlocatie
+              {{
+                locationsStore.activeLocation?.properties?.locatie_id || "..."
+              }}
             </h3>
             <v-table>
               <tbody>
                 <tr>
-                  <td>Naam</td>
-                  <td>{{ locationsStore.activeLocation?.properties?.locatie_id || '...' }}</td>
+                  <td>Locatienaam Master</td>
+                  <td>
+                    {{
+                      locationsStore.activeLocation?.properties?.locatie_id ||
+                      "..."
+                    }}
+                  </td>
                 </tr>
                 <tr>
                   <td>Coördinaten (EPSG:4326)</td>
                   <td>
-                    {{ locationsStore.activeLocation?.geometry?.coordinates?.[0].toFixed(6) }},
-                    {{ locationsStore.activeLocation?.geometry?.coordinates?.[1].toFixed(6) }}
+                    {{
+                      locationsStore.activeLocation?.geometry?.coordinates?.[0].toFixed(
+                        6
+                      )
+                    }},
+                    {{
+                      locationsStore.activeLocation?.geometry?.coordinates?.[1].toFixed(
+                        6
+                      )
+                    }}
                   </td>
                 </tr>
                 <tr>
-                  <td>Beschikbare peilfilters</td>
+                  <td>Peilfilternaam</td>
                   <td>
                     <v-select
                       v-model="selectedPeilfilterId"
@@ -60,43 +76,44 @@
   </v-app>
 </template>
 <script setup>
+import { computed, ref, watch } from "vue";
+import TimeSeriesChart from "@/components/TimeSeriesChart.vue";
+import { useAppStore } from "@/stores/app";
+import { useLocationsStore } from "@/stores/locations";
 
-  import { computed, ref, watch } from 'vue'
-  import TimeSeriesChart from '@/components/TimeSeriesChart.vue'
-  import { useAppStore } from '@/stores/app'
-  import { useLocationsStore } from '@/stores/locations'
+const appStore = useAppStore();
+const locationsStore = useLocationsStore();
 
-  const appStore = useAppStore()
-  const locationsStore = useLocationsStore()
+const panelIsCollapsed = computed(() => appStore.panelIsCollapsed);
 
-  const panelIsCollapsed = computed(() => appStore.panelIsCollapsed)
+function onClick() {
+  appStore.collapsePanel();
+}
 
-  function onClick () {
-    appStore.collapsePanel()
-  }
+const selectedPeilfilterId = ref(null);
 
-  const selectedPeilfilterId = ref(null)
+const peilfilterOptions = computed(() => {
+  const ids = locationsStore.activeLocation?.properties?.peilfilter_ids;
+  if (!ids) return [];
+  return ids.split(",").map((id) => id.trim());
+});
 
-  const peilfilterOptions = computed(() => {
-    const ids = locationsStore.activeLocation?.properties?.peilfilter_ids
-    if (!ids) return []
-    return ids.split(',').map(id => id.trim())
-  })
-
-  // Update selectedPeilfilterId when activeLocation changes
-  watch(() => locationsStore.activeLocation, newLocation => {
+// Update selectedPeilfilterId when activeLocation changes
+watch(
+  () => locationsStore.activeLocation,
+  (newLocation) => {
     if (newLocation) {
-      const options = peilfilterOptions.value
-      selectedPeilfilterId.value = options.length > 0 ? options[0] : null
+      const options = peilfilterOptions.value;
+      selectedPeilfilterId.value = options.length > 0 ? options[0] : null;
     } else {
-      selectedPeilfilterId.value = null
+      selectedPeilfilterId.value = null;
     }
-  }, { immediate: true })
-
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>
-
 .app-panel {
   position: fixed;
   z-index: 2;
@@ -105,7 +122,7 @@
   height: 50vh;
   overflow: hidden;
   background-color: #fff;
-  box-shadow: 0 -2px 8px 0px rgba(0, 0, 0, .3);
+  box-shadow: 0 -2px 8px 0px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease;
 }
 
@@ -151,5 +168,4 @@
   overflow: hidden;
   position: relative;
 }
-
 </style>
