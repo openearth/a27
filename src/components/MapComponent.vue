@@ -2,7 +2,9 @@
   import { MapboxMap } from '@studiometa/vue-mapbox-gl'
   import { ref } from 'vue'
   import LocationsLayer from '@/components/LocationsLayer.vue'
+  import BasemapControl from '@/components/BasemapControl.vue'
   import { useLocationsStore } from '@/stores/locations'
+  import { MAP_BASELAYERS } from '@/lib/constants'
 
   const accessToken = import.meta.env.VITE_MAPBOX_TOKEN
   const locationsStore = useLocationsStore()
@@ -26,6 +28,14 @@
       @mb-created="onMapCreated"
     >
       <LocationsLayer :map="mapInstance" />
+      
+      <div class="map-controls">
+        <BasemapControl 
+          v-if="mapInstance" 
+          :map="mapInstance" 
+          :styles="MAP_BASELAYERS"
+        />
+      </div>
     </mapbox-map>
   </div>
 </template>
@@ -35,5 +45,13 @@
 .map-wrapper .mapboxgl-map {
   width: 100%;
   height: 100%;
+  position: relative;
+}
+
+.map-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
 }
 </style>

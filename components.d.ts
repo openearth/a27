@@ -8,6 +8,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    BasemapControl: typeof import('./src/components/BasemapControl.vue')['default']
     LocationsLayer: typeof import('./src/components/LocationsLayer.vue')['default']
     MapComponent: typeof import('./src/components/MapComponent.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
