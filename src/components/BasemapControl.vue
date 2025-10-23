@@ -38,8 +38,11 @@
 <script setup>
   import { ref, onMounted, onUnmounted } from 'vue'
 
-  const { styles } = defineProps({
-   
+  const { map, styles } = defineProps({
+    map: {
+      type: Object,
+      required: true
+    },
     styles: {
       type: Array,
       required: true
@@ -54,9 +57,18 @@
   }
 
   function selectStyle(style) {
+    if (!map || activeStyle.value === style.title) {
+      showDropdown.value = false
+      return
+    }
+
+    // Switch to new basemap style
+    map.setStyle(style.uri)
     activeStyle.value = style.title
     showDropdown.value = false
-  // TODO: Add style switching functionality later
+    
+    // Note: LocationsLayer component automatically re-adds its layers
+    // when it detects the new style has loaded via its reactive watch
   }
 
   function handleClickOutside(event) {

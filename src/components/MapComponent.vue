@@ -1,10 +1,10 @@
 <script setup>
   import { MapboxMap, MapboxNavigationControl  } from '@studiometa/vue-mapbox-gl'
-  import { ref } from 'vue'
+  import { ref, computed } from 'vue'
   import LocationsLayer from '@/components/LocationsLayer.vue'
   import BasemapControl from '@/components/BasemapControl.vue'
   import { useLocationsStore } from '@/stores/locations'
-  import { MAP_BASELAYERS } from '@/lib/constants'
+  import { MAP_BASELAYERS, MAP_BASELAYER_DEFAULT } from '@/lib/constants'
 
   const accessToken = import.meta.env.VITE_MAPBOX_TOKEN
   const locationsStore = useLocationsStore()
@@ -15,6 +15,8 @@
     locationsStore.fetchLocations().then(() => {
     })
   }
+
+  const defaultMapStyle = computed(() => MAP_BASELAYER_DEFAULT.uri)
 </script>
 
 <template>
@@ -23,7 +25,7 @@
       v-model:map="mapInstance"
       :access-token="accessToken"
       :center="[5.1, 52.07]"
-      map-style="mapbox://styles/mapbox/light-v11"
+      :map-style="defaultMapStyle"
       :zoom="10.5"
       @mb-created="onMapCreated"
     >
