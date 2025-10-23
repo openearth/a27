@@ -6,6 +6,24 @@
 
     <v-main>
       <map-component />
+      <div class="location-filter">
+        <v-btn-toggle v-model="selectedFilter" mandatory class="filter-toggle">
+          <v-btn
+            value="focus"
+            class="filter-btn"
+            :class="{ 'filter-btn--active': selectedFilter === 'focus' }"
+          >
+            Focus area
+          </v-btn>
+          <v-btn
+            value="all"
+            class="filter-btn"
+            :class="{ 'filter-btn--active': selectedFilter === 'all' }"
+          >
+            All locations
+          </v-btn>
+        </v-btn-toggle>
+      </div>
       <div class="app-panel" :class="{ collapsed: panelIsCollapsed }">
         <v-btn
           class="app-panel__minimize"
@@ -91,6 +109,7 @@ function onClick() {
 }
 
 const selectedPeilfilterId = ref(null);
+const selectedFilter = ref("all");
 
 const peilfilterOptions = computed(() => {
   const ids = locationsStore.activeLocation?.properties?.peilfilter_ids;
@@ -167,5 +186,38 @@ watch(
   flex: 1 1 0;
   overflow: hidden;
   position: relative;
+}
+
+.location-filter {
+  position: fixed;
+  top: 80px;
+  left: 20px;
+  z-index: 3;
+}
+
+.filter-toggle {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.filter-btn {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  border-radius: 0;
+  min-width: 100px;
+}
+
+.filter-btn--active {
+  background-color: #1976d2 !important;
+  color: white !important;
+}
+
+.filter-btn:not(.filter-btn--active) {
+  background-color: white;
+  color: #333;
 }
 </style>
