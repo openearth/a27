@@ -6,6 +6,22 @@
 
     <v-main>
       <map-component />
+      <div class="map-legend">
+        <div class="legend-title">Dataleveranciers</div>
+        <div class="legend-items">
+          <div
+            v-for="item in legendItems"
+            :key="item.bronId"
+            class="legend-item"
+          >
+            <div
+              class="legend-symbol"
+              :style="{ borderColor: item.color }"
+            ></div>
+            <span class="legend-text">{{ item.dataleverancier }}</span>
+          </div>
+        </div>
+      </div>
       <div class="app-panel" :class="{ collapsed: panelIsCollapsed }">
         <v-btn
           class="app-panel__minimize"
@@ -92,6 +108,37 @@ function onClick() {
 
 const selectedPeilfilterId = ref(null);
 
+const legendItems = computed(() => {
+  const uniqueProviders = new Map();
+
+  locationsStore.locations.forEach((location) => {
+    const bronId = location.properties?.bron_id;
+    const dataleverancier = location.properties?.dataleverancier;
+
+    if (bronId && dataleverancier && !uniqueProviders.has(bronId)) {
+      uniqueProviders.set(bronId, {
+        bronId,
+        dataleverancier,
+        color: getColorForBronId(bronId),
+      });
+    }
+  });
+
+  return Array.from(uniqueProviders.values()).sort(
+    (a, b) => a.bronId - b.bronId
+  );
+});
+
+function getColorForBronId(bronId) {
+  const colors = {
+    1: "#008fc5",
+    2: "#28a745",
+    3: "#ffc107",
+    4: "#dc3545",
+  };
+  return colors[bronId] || "#6c757d"; // Gray fallback
+}
+
 const peilfilterOptions = computed(() => {
   const ids = locationsStore.activeLocation?.properties?.peilfilter_ids;
   if (!ids) return [];
@@ -167,5 +214,51 @@ watch(
   flex: 1 1 0;
   overflow: hidden;
   position: relative;
+}
+
+.map-legend {
+  position: fixed;
+  top: 80px;
+  left: 20px;
+  z-index: 3;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 12px;
+  min-width: 200px;
+}
+
+.legend-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-symbol {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: white;
+  border: 4px solid;
+  flex-shrink: 0;
+}
+
+.legend-text {
+  font-size: 12px;
+  color: #555;
+  line-height: 1.2;
 }
 </style>

@@ -46,7 +46,18 @@ watch(
           "circle-color": "#fff",
           "circle-radius": 5,
           "circle-stroke-width": 5,
-          "circle-stroke-color": "#008fc5",
+          "circle-stroke-color": [
+            "case",
+            ["==", ["get", "bron_id"], 1],
+            "#008fc5",
+            ["==", ["get", "bron_id"], 2],
+            "#28a745",
+            ["==", ["get", "bron_id"], 3],
+            "#ffc107",
+            ["==", ["get", "bron_id"], 4],
+            "#dc3545",
+            "#6c757d",
+          ],
         },
       });
       map.addSource("active-location", {
@@ -100,7 +111,13 @@ watch(
           : [];
 
         // Build HTML content
+        const bronId = feature.properties?.bron_id || "Unknown";
+        const dataleverancier =
+          feature.properties?.dataleverancier || "Unknown";
+
         let htmlContent = `<div>Locatie ID: <strong>${locatieId}</strong></div>`;
+        htmlContent += `<div>Bron ID: <strong>${bronId}</strong></div>`;
+        htmlContent += `<div>Dataleverancier: <strong>${dataleverancier}</strong></div>`;
 
         if (peilfilterList.length > 0) {
           const label =
