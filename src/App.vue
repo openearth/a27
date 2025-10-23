@@ -13,10 +13,21 @@
             v-for="item in legendItems"
             :key="item.bronId"
             class="legend-item"
+            :class="{
+              'legend-item--disabled': appStore.disabledCategories.has(
+                item.bronId
+              ),
+            }"
+            @click="appStore.toggleCategory(item.bronId)"
           >
             <div
               class="legend-symbol"
-              :style="{ borderColor: item.color }"
+              :style="{
+                borderColor: appStore.disabledCategories.has(item.bronId)
+                  ? '#ccc'
+                  : item.color,
+                opacity: appStore.disabledCategories.has(item.bronId) ? 0.5 : 1,
+              }"
             ></div>
             <span class="legend-text">{{ item.dataleverancier }}</span>
           </div>
@@ -79,6 +90,15 @@
                     />
                   </td>
                 </tr>
+                <tr>
+                  <td>Dataleverancier</td>
+                  <td>
+                    {{
+                      locationsStore.activeLocation?.properties
+                        ?.dataleverancier || "..."
+                    }}
+                  </td>
+                </tr>
               </tbody>
             </v-table>
           </div>
@@ -134,7 +154,7 @@ function getColorForBronId(bronId) {
     1: "#008fc5",
     2: "#28a745",
     3: "#ffc107",
-    4: "#dc3545",
+    4: "#895129",
   };
   return colors[bronId] || "#6c757d"; // Gray fallback
 }
@@ -245,6 +265,22 @@ watch(
   display: flex;
   align-items: center;
   gap: 8px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.legend-item:hover {
+  background-color: #f5f5f5;
+}
+
+.legend-item--disabled {
+  opacity: 0.5;
+}
+
+.legend-item--disabled:hover {
+  background-color: #f0f0f0;
 }
 
 .legend-symbol {

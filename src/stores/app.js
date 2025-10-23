@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 export const useAppStore = defineStore('app', {
   state: () => ({
     panelIsCollapsed: true,
+    disabledCategories: new Set(),
   }),
   actions: {
     collapsePanel () {
@@ -14,6 +15,13 @@ export const useAppStore = defineStore('app', {
     },
     togglePanel () {
       this.panelIsCollapsed = !this.panelIsCollapsed
+    },
+    toggleCategory (bronId) {
+      if (this.disabledCategories.has(bronId)) {
+        this.disabledCategories.delete(bronId)
+      } else {
+        this.disabledCategories.add(bronId)
+      }
     },
   },
 })

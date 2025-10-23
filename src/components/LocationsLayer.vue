@@ -55,8 +55,20 @@ watch(
             ["==", ["get", "bron_id"], 3],
             "#ffc107",
             ["==", ["get", "bron_id"], 4],
-            "#dc3545",
+            "#895129",
             "#6c757d",
+          ],
+          "circle-opacity": [
+            "case",
+            ["==", ["get", "bron_id"], 1],
+            1,
+            ["==", ["get", "bron_id"], 2],
+            1,
+            ["==", ["get", "bron_id"], 3],
+            1,
+            ["==", ["get", "bron_id"], 4],
+            1,
+            1,
           ],
         },
       });
@@ -80,6 +92,12 @@ watch(
     map.on("click", "locations-layer", (e) => {
       const feature = e.features?.[0];
       if (feature) {
+        const bronId = feature.properties?.bron_id;
+        // Don't allow interaction if category is disabled
+        if (appStore.disabledCategories.has(bronId)) {
+          return;
+        }
+
         locationsStore.setActiveLocation(feature);
         appStore.expandPanel();
 
@@ -97,10 +115,16 @@ watch(
     });
 
     map.on("mouseenter", "locations-layer", (e) => {
-      map.getCanvas().style.cursor = "pointer";
-
       const feature = e.features?.[0];
       if (feature) {
+        const hoverBronId = feature.properties?.bron_id;
+        // Don't show hover if category is disabled
+        if (appStore.disabledCategories.has(hoverBronId)) {
+          map.getCanvas().style.cursor = "grab";
+          return;
+        }
+
+        map.getCanvas().style.cursor = "pointer";
         const coords = feature.geometry.coordinates.slice();
         const locatieId = feature.properties?.locatie_id || "Unknown";
         const peilfilterIds = feature.properties?.peilfilter_ids || "";
@@ -111,13 +135,8 @@ watch(
           : [];
 
         // Build HTML content
-        const bronId = feature.properties?.bron_id || "Unknown";
-        const dataleverancier =
-          feature.properties?.dataleverancier || "Unknown";
 
         let htmlContent = `<div>Locatie ID: <strong>${locatieId}</strong></div>`;
-        htmlContent += `<div>Bron ID: <strong>${bronId}</strong></div>`;
-        htmlContent += `<div>Dataleverancier: <strong>${dataleverancier}</strong></div>`;
 
         if (peilfilterList.length > 0) {
           const label =
@@ -148,6 +167,56 @@ watch(
     });
   },
   { immediate: true }
+);
+
+// Watch for disabled categories changes and update map layer
+watch(
+  () => appStore.disabledCategories,
+  (disabledCategories) => {
+    const map = props.map;
+    if (!map || !map.getLayer("locations-layer")) return;
+
+    // Update circle opacity based on disabled categories
+    const opacityExpression = [
+      "case",
+      ["==", ["get", "bron_id"], 1],
+      disabledCategories.has(1) ? 0.3 : 1,
+      ["==", ["get", "bron_id"], 2],
+      disabledCategories.has(2) ? 0.3 : 1,
+      ["==", ["get", "bron_id"], 3],
+      disabledCategories.has(3) ? 0.3 : 1,
+      ["==", ["get", "bron_id"], 4],
+      disabledCategories.has(4) ? 0.3 : 1,
+      1,
+    ];
+
+    // Update stroke color to gray with transparency when disabled
+    const strokeColorExpression = [
+      "case",
+      ["==", ["get", "bron_id"], 1],
+      disabledCategories.has(1) ? "rgba(153, 153, 153, 0.3)" : "#008fc5",
+      ["==", ["get", "bron_id"], 2],
+      disabledCategories.has(2) ? "rgba(153, 153, 153, 0.3)" : "#28a745",
+      ["==", ["get", "bron_id"], 3],
+      disabledCategories.has(3) ? "rgba(153, 153, 153, 0.3)" : "#ffc107",
+      ["==", ["get", "bron_id"], 4],
+      disabledCategories.has(4) ? "rgba(153, 153, 153, 0.3)" : "#895129",
+      "#6c757d",
+    ];
+
+    map.setPaintProperty(
+      "locations-layer",
+      "circle-opacity",
+      opacityExpression
+    );
+
+    map.setPaintProperty(
+      "locations-layer",
+      "circle-stroke-color",
+      strokeColorExpression
+    );
+  },
+  { deep: true }
 );
 
 watch(
