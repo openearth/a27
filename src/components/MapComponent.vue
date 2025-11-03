@@ -1,18 +1,32 @@
 <script setup>
   import { MapboxMap } from '@studiometa/vue-mapbox-gl'
-  import { ref } from 'vue'
-  import LocationsLayer from '@/components/LocationsLayer.vue'
+  import { computed, ref, watch } from 'vue'
+  import MapLayer from '@/components/MapLayer.vue'
   import { useLocationsStore } from '@/stores/locations'
+  import { useMapStore } from '@/stores/map'
 
   const accessToken = import.meta.env.VITE_MAPBOX_TOKEN
   const locationsStore = useLocationsStore()
+  const mapStore = useMapStore()
   const mapInstance = ref(null)
+  const mapboxLayers = computed(() => mapStore.mapboxLayers)
 
   function onMapCreated (map) {
     mapInstance.value = map
+    mapStore.initializeMapboxLayers()
     locationsStore.fetchLocations().then(() => {
+      // Refresh layers after locations are fetched
+      mapStore.refreshLayers()
     })
   }
+
+  // Watch for locations changes and refresh layers
+  watch(
+    () => locationsStore.locations,
+    () => {
+      mapStore.refreshLayers()
+    }
+  )
 </script>
 
 <template>
@@ -25,7 +39,11 @@
       :zoom="10.5"
       @mb-created="onMapCreated"
     >
-      <LocationsLayer :map="mapInstance" />
+      <MapLayer
+        v-for="layer in mapboxLayers"
+        :key="layer.id"
+        :layer="layer"
+      />
     </mapbox-map>
   </div>
 </template>

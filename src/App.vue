@@ -7,7 +7,9 @@
     <v-main>
       <map-component />
       <div class="map-legend">
-        <div class="legend-title">Dataleveranciers</div>
+        <div class="legend-title">
+          Dataleveranciers
+        </div>
         <div class="legend-items">
           <div
             v-for="item in legendItems"
@@ -28,7 +30,7 @@
                   : item.color,
                 opacity: appStore.disabledCategories.has(item.bronId) ? 0.5 : 1,
               }"
-            ></div>
+            />
             <span class="legend-text">{{ item.dataleverancier }}</span>
           </div>
         </div>
@@ -58,7 +60,7 @@
                   <td>
                     {{
                       locationsStore.activeLocation?.properties?.locatie_id ||
-                      "..."
+                        "..."
                     }}
                   </td>
                 </tr>
@@ -112,72 +114,72 @@
   </v-app>
 </template>
 <script setup>
-import { computed, ref, watch } from "vue";
-import TimeSeriesChart from "@/components/TimeSeriesChart.vue";
-import { useAppStore } from "@/stores/app";
-import { useLocationsStore } from "@/stores/locations";
+  import { computed, ref, watch } from "vue";
+  import TimeSeriesChart from "@/components/TimeSeriesChart.vue";
+  import { useAppStore } from "@/stores/app";
+  import { useLocationsStore } from "@/stores/locations";
 
-const appStore = useAppStore();
-const locationsStore = useLocationsStore();
+  const appStore = useAppStore();
+  const locationsStore = useLocationsStore();
 
-const panelIsCollapsed = computed(() => appStore.panelIsCollapsed);
+  const panelIsCollapsed = computed(() => appStore.panelIsCollapsed);
 
-function onClick() {
-  appStore.collapsePanel();
-}
+  function onClick() {
+    appStore.collapsePanel();
+  }
 
-const selectedPeilfilterId = ref(null);
+  const selectedPeilfilterId = ref(null);
 
-const legendItems = computed(() => {
-  const uniqueProviders = new Map();
+  const legendItems = computed(() => {
+    const uniqueProviders = new Map();
 
-  locationsStore.locations.forEach((location) => {
-    const bronId = location.properties?.bron_id;
-    const dataleverancier = location.properties?.dataleverancier;
+    locationsStore.locations?.features?.forEach((location) => {
+      const bronId = location.properties?.bron_id;
+      const dataleverancier = location.properties?.dataleverancier;
 
-    if (bronId && dataleverancier && !uniqueProviders.has(bronId)) {
-      uniqueProviders.set(bronId, {
-        bronId,
-        dataleverancier,
-        color: getColorForBronId(bronId),
-      });
-    }
+      if (bronId && dataleverancier && !uniqueProviders.has(bronId)) {
+        uniqueProviders.set(bronId, {
+          bronId,
+          dataleverancier,
+          color: getColorForBronId(bronId),
+        });
+      }
+    });
+
+    return Array.from(uniqueProviders.values()).sort(
+      (a, b) => a.bronId - b.bronId
+    );
   });
 
-  return Array.from(uniqueProviders.values()).sort(
-    (a, b) => a.bronId - b.bronId
+  function getColorForBronId(bronId) {
+    const colors = {
+      1: "#008fc5",
+      2: "#28a745",
+      3: "#ffc107",
+      4: "#895129",
+    };
+    return colors[bronId] || "#6c757d"; // Gray fallback
+  }
+
+  const peilfilterOptions = computed(() => {
+    const ids = locationsStore.activeLocation?.properties?.peilfilter_ids;
+    if (!ids) return [];
+    return ids.split(",").map((id) => id.trim());
+  });
+
+  // Update selectedPeilfilterId when activeLocation changes
+  watch(
+    () => locationsStore.activeLocation,
+    (newLocation) => {
+      if (newLocation) {
+        const options = peilfilterOptions.value;
+        selectedPeilfilterId.value = options.length > 0 ? options[0] : null;
+      } else {
+        selectedPeilfilterId.value = null;
+      }
+    },
+    { immediate: true }
   );
-});
-
-function getColorForBronId(bronId) {
-  const colors = {
-    1: "#008fc5",
-    2: "#28a745",
-    3: "#ffc107",
-    4: "#895129",
-  };
-  return colors[bronId] || "#6c757d"; // Gray fallback
-}
-
-const peilfilterOptions = computed(() => {
-  const ids = locationsStore.activeLocation?.properties?.peilfilter_ids;
-  if (!ids) return [];
-  return ids.split(",").map((id) => id.trim());
-});
-
-// Update selectedPeilfilterId when activeLocation changes
-watch(
-  () => locationsStore.activeLocation,
-  (newLocation) => {
-    if (newLocation) {
-      const options = peilfilterOptions.value;
-      selectedPeilfilterId.value = options.length > 0 ? options[0] : null;
-    } else {
-      selectedPeilfilterId.value = null;
-    }
-  },
-  { immediate: true }
-);
 </script>
 
 <style scoped>
