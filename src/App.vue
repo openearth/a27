@@ -133,7 +133,10 @@
   const legendItems = computed(() => {
     const uniqueProviders = new Map();
 
-    locationsStore.locations?.features?.forEach((location) => {
+    // locationsStore.locations is now an array, not a FeatureCollection
+    const locations = locationsStore.locations || [];
+    
+    locations.forEach((location) => {
       const bronId = location.properties?.bron_id;
       const dataleverancier = location.properties?.dataleverancier;
 

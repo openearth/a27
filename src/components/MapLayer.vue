@@ -10,7 +10,6 @@
 </template>
 <script>
   import { MapboxLayer, useMap } from '@studiometa/vue-mapbox-gl'
-
   import { unref } from 'vue'
 
   export default {
@@ -29,13 +28,23 @@
     },
     methods: {
       onLayerClicked (e) {
-        this.$emit('click', e.features[0])
+        // Emit feature and full event, MapComponent will filter by layerId
+        this.$emit('click', e.features?.[0], e)
       },
-      onMouseenter () {
-        unref(this.map).getCanvas().style.cursor = 'pointer'
+      onMouseenter (e) {
+        // Emit full event so MapComponent can access features
+        this.$emit('mouseenter', e)
+        // Also update cursor here as fallback
+        if (unref(this.map)) {
+          unref(this.map).getCanvas().style.cursor = 'pointer'
+        }
       },
       onMouseleave () {
-        unref(this.map).getCanvas().style.cursor = ''
+        this.$emit('mouseleave')
+        // Reset cursor
+        if (unref(this.map)) {
+          unref(this.map).getCanvas().style.cursor = ''
+        }
       },
     },
   }

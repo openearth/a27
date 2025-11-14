@@ -17,11 +17,14 @@ export const useAppStore = defineStore('app', {
       this.panelIsCollapsed = !this.panelIsCollapsed
     },
     toggleCategory (bronId) {
-      if (this.disabledCategories.has(bronId)) {
-        this.disabledCategories.delete(bronId)
+      // Create a new Set to trigger reactivity in Pinia
+      const newSet = new Set(this.disabledCategories)
+      if (newSet.has(bronId)) {
+        newSet.delete(bronId)
       } else {
-        this.disabledCategories.add(bronId)
+        newSet.add(bronId)
       }
+      this.disabledCategories = newSet
     },
   },
 })

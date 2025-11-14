@@ -9,9 +9,29 @@ export const useLocationsStore = defineStore('locations', {
   }),
   
   getters: {
+    // Convert locations array to FeatureCollection for layer config
+    locationsFeatureCollection () {
+      if (!this.locations || this.locations.length === 0) {
+        return { type: 'FeatureCollection', features: [] }
+      }
+      
+      // If already a FeatureCollection, return as-is
+      if (this.locations.type === 'FeatureCollection') {
+        return this.locations
+      }
+      
+      // Otherwise convert array of features to FeatureCollection
+      return {
+        type: 'FeatureCollection',
+        features: this.locations,
+      }
+    },
+    
     // Enhanced layer config with paint, id, and everything needed for buildGeojsonLayer
     locationsLayerConfig () {
-      if (!this.locations || !this.locations.features || this.locations.features.length === 0) {
+      const featureCollection = this.locationsFeatureCollection
+      
+      if (!featureCollection.features || featureCollection.features.length === 0) {
         return null
       }
       
@@ -20,7 +40,7 @@ export const useLocationsStore = defineStore('locations', {
         type: 'circle', // Mapbox layer type
         source: {
           type: 'geojson',
-          data: this.locations, // Already a FeatureCollection
+          data: featureCollection,
         },
         paint: {
           'circle-color': '#fff',
@@ -51,13 +71,7 @@ export const useLocationsStore = defineStore('locations', {
             1,
           ],
         },
-        // Optional: layout properties
         layout: {},
-        // Store interaction handlers info here if needed
-        interactions: {
-          clickable: true,
-          hoverable: true,
-        },
       }
     },
   },
@@ -65,12 +79,25 @@ export const useLocationsStore = defineStore('locations', {
   actions: {
     async fetchLocations () {
       try {
-        // API returns FeatureCollection directly
-        const featureCollection = await getLocationsData()
-        // Store the whole FeatureCollection
-        this.locations = featureCollection
+        const data = await getLocationsData()
+        
+        // Handle both FeatureCollection and array of features
+        if (data.type === 'FeatureCollection' && data.features) {
+          // If FeatureCollection, extract features array for easier access
+          this.locations = data.features
+        } else if (Array.isArray(data)) {
+          // If already an array
+          this.locations = data
+        } else if (data.features && Array.isArray(data.features)) {
+          // If object with features property
+          this.locations = data.features
+        } else {
+          console.warn('Unexpected locations data format:', data)
+          this.locations = []
+        }
       } catch (error) {
         console.error('Failed to fetch locations:', error)
+        this.locations = []
       }
     },
     

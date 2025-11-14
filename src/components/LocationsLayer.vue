@@ -177,6 +177,7 @@
       if (!map || !map.getLayer("locations-layer")) return;
 
       // Update circle opacity based on disabled categories
+      //Move all these to store.
       const opacityExpression = [
         "case",
         ["==", ["get", "bron_id"], 1],
@@ -189,7 +190,7 @@
         disabledCategories.has(4) ? 0.3 : 1,
         1,
       ];
-
+      //move all this to store
       // Update stroke color to gray with transparency when disabled
       const strokeColorExpression = [
         "case",
@@ -203,7 +204,9 @@
         disabledCategories.has(4) ? "rgba(153, 153, 153, 0.3)" : "#895129",
         "#6c757d",
       ];
-
+      // You can create a component. Name it LayerPaintControl. Accepts as props the layer id. 
+      // In the component you need to inject the map in order to have the mapbox-gl functionalities.
+      
       map.setPaintProperty(
         "locations-layer",
         "circle-opacity",
