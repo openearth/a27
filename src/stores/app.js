@@ -5,6 +5,7 @@ export const useAppStore = defineStore('app', {
   state: () => ({
     panelIsCollapsed: true,
     disabledCategories: new Set(),
+    viewMode: 'focus', // 'all' or 'focus'
   }),
   actions: {
     collapsePanel () {
@@ -25,6 +26,9 @@ export const useAppStore = defineStore('app', {
         newSet.add(bronId)
       }
       this.disabledCategories = newSet
+    },
+    setViewMode (mode) {
+      this.viewMode = mode
     },
   },
 })

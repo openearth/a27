@@ -6,6 +6,21 @@
 
     <v-main>
       <map-component />
+      <div class="view-mode-toggle">
+        <v-btn-toggle
+          v-model="viewMode"
+          mandatory
+          color="primary"
+          density="compact"
+        >
+          <v-btn value="focus">
+            Focus area
+          </v-btn>
+          <v-btn value="all">
+            All locations
+          </v-btn>
+        </v-btn-toggle>
+      </div>
       <div class="map-legend">
         <div class="legend-title">
           Dataleveranciers
@@ -124,6 +139,11 @@
 
   const panelIsCollapsed = computed(() => appStore.panelIsCollapsed);
 
+  const viewMode = computed({
+    get: () => appStore.viewMode,
+    set: (value) => appStore.setViewMode(value),
+  });
+
   function onClick() {
     appStore.collapsePanel();
   }
@@ -241,9 +261,20 @@
   position: relative;
 }
 
-.map-legend {
+.view-mode-toggle {
   position: fixed;
   top: 80px;
+  left: 20px;
+  z-index: 4;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+}
+
+.map-legend {
+  position: fixed;
+  top: 140px;
   left: 20px;
   z-index: 3;
   background: white;

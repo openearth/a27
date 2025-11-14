@@ -1,17 +1,17 @@
 <script setup>
-import { MapboxMap } from '@studiometa/vue-mapbox-gl'
+  import { MapboxMap } from '@studiometa/vue-mapbox-gl'
 import { computed, onBeforeUnmount, provide, ref, watch } from 'vue'
 import mapboxgl from 'mapbox-gl'
 import MapLayer from '@/components/MapLayer.vue'
-import { useLocationsStore } from '@/stores/locations'
+  import { useLocationsStore } from '@/stores/locations'
 import { useMapStore } from '@/stores/map'
 import { useAppStore } from '@/stores/app'
 
-const accessToken = import.meta.env.VITE_MAPBOX_TOKEN
-const locationsStore = useLocationsStore()
+  const accessToken = import.meta.env.VITE_MAPBOX_TOKEN
+  const locationsStore = useLocationsStore()
 const mapStore = useMapStore()
 const appStore = useAppStore()
-const mapInstance = ref(null)
+  const mapInstance = ref(null)
 const hoverPopup = ref(null)
 const mapboxLayers = computed(() => mapStore.mapboxLayers)
 
@@ -20,7 +20,7 @@ const map = computed(() => mapInstance.value)
 provide('map', map)
 
 function onMapCreated(map) {
-  mapInstance.value = map
+    mapInstance.value = map
 
   // Create popup instance for hover
   hoverPopup.value = new mapboxgl.Popup({
@@ -43,7 +43,7 @@ function onMapCreated(map) {
 
 function initializeMap() {
   mapStore.initializeMapboxLayers()
-  locationsStore.fetchLocations().then(() => {
+    locationsStore.fetchLocations().then(() => {
     mapStore.refreshLayers()
   })
 }
@@ -160,6 +160,25 @@ function handleLayerMouseleave(layerId) {
   }
 }
 
+// Function to update locations layer source data with filtered locations
+function updateLocationsSourceData() {
+  const mapObj = mapInstance.value
+  if (!mapObj || !mapObj.getLayer('locations-layer')) {
+    return
+  }
+
+  const layer = mapObj.getLayer('locations-layer')
+  const sourceId = layer.source || 'locations-layer'
+  const source = mapObj.getSource(sourceId)
+  
+  if (!source || source.type !== 'geojson') {
+    return
+  }
+
+  const featureCollection = locationsStore.locationsFeatureCollection
+  source.setData(featureCollection)
+}
+
 // Function to update paint properties based on disabled categories
 function updatePaintProperties() {
   const mapObj = mapInstance.value
@@ -219,6 +238,16 @@ watch(
   () => locationsStore.locations,
   () => {
     mapStore.refreshLayers()
+  }
+)
+
+// Watch for view mode changes and update layer source data
+watch(
+  () => appStore.viewMode,
+  () => {
+    setTimeout(() => {
+      updateLocationsSourceData()
+    }, 100)
   }
 )
 
@@ -310,6 +339,7 @@ watch(
         if (mapInstance.value?.getLayer('locations-layer')) {
           updatePaintProperties()
           setupLocationsLayerListeners()
+          updateLocationsSourceData()
 
           const mapObj = mapInstance.value
           if (mapObj.getLayer('active-location-layer') && mapObj.getLayer('locations-layer')) {

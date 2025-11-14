@@ -1,6 +1,7 @@
 // stores/locations.js
 import { defineStore } from 'pinia'
 import getLocationsData from '@/lib/get-locations-data'
+import { useAppStore } from '@/stores/app'
 
 export const useLocationsStore = defineStore('locations', {
   state: () => ({
@@ -9,21 +10,30 @@ export const useLocationsStore = defineStore('locations', {
   }),
   
   getters: {
-    // Convert locations array to FeatureCollection for layer config
+    // Filter locations based on view mode
+    filteredLocations () {
+      const appStore = useAppStore()
+      
+      if (appStore.viewMode === 'focus') {
+        // Only return locations where focus is true
+        return this.locations.filter(location => location.properties?.focus === true)
+      }
+      
+      // Return all locations
+      return this.locations
+    },
+    
+    // Convert filtered locations array to FeatureCollection for layer config
     locationsFeatureCollection () {
-      if (!this.locations || this.locations.length === 0) {
+      const filtered = this.filteredLocations
+      
+      if (!filtered || filtered.length === 0) {
         return { type: 'FeatureCollection', features: [] }
       }
       
-      // If already a FeatureCollection, return as-is
-      if (this.locations.type === 'FeatureCollection') {
-        return this.locations
-      }
-      
-      // Otherwise convert array of features to FeatureCollection
       return {
         type: 'FeatureCollection',
-        features: this.locations,
+        features: filtered,
       }
     },
     
