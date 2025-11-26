@@ -23,8 +23,13 @@
       },
     },
     mounted () {
+      console.log(`[MapLayer] Component mounted for layer: ${this.layer?.id}`)
       const { map } = useMap()
       this.map = map
+      console.log(`[MapLayer] Map instance available for ${this.layer?.id}:`, !!unref(map))
+    },
+    updated () {
+      console.log(`[MapLayer] Component updated for layer: ${this.layer?.id}`)
     },
     methods: {
       onLayerClicked (e) {
