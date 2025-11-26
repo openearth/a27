@@ -4,6 +4,8 @@ import { defineStore } from 'pinia'
 export const useAppStore = defineStore('app', {
   state: () => ({
     panelIsCollapsed: true,
+    disabledCategories: new Set(),
+    viewMode: 'focus', // 'all' or 'focus'
   }),
   actions: {
     collapsePanel () {
@@ -14,6 +16,19 @@ export const useAppStore = defineStore('app', {
     },
     togglePanel () {
       this.panelIsCollapsed = !this.panelIsCollapsed
+    },
+    toggleCategory (bronId) {
+      // Create a new Set to trigger reactivity in Pinia
+      const newSet = new Set(this.disabledCategories)
+      if (newSet.has(bronId)) {
+        newSet.delete(bronId)
+      } else {
+        newSet.add(bronId)
+      }
+      this.disabledCategories = newSet
+    },
+    setViewMode (mode) {
+      this.viewMode = mode
     },
   },
 })
