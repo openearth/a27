@@ -62,18 +62,10 @@
       return
     }
 
-    console.log('[BasemapControl] selectStyle called:', style.title, style.uri)
-    console.log('[BasemapControl] Current map style before change:', map.getStyle()?.name || 'unknown')
-    
     // Switch to new basemap style
     map.setStyle(style.uri)
     activeStyle.value = style.title
     showDropdown.value = false
-    
-    console.log('[BasemapControl] setStyle() called, waiting for style.load event...')
-    
-    // Note: LocationsLayer component automatically re-adds its layers
-    // when it detects the new style has loaded via its reactive watch
   }
 
   function handleClickOutside(event) {
