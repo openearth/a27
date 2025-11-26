@@ -1,5 +1,28 @@
+<template>
+  <div class="map-wrapper">
+    <mapbox-map
+      v-model:map="mapInstance"
+      :access-token="accessToken"
+      :center="[5.1, 52.07]"
+      map-style="mapbox://styles/mapbox/light-v11"
+      :zoom="10.5"
+      @mb-created="onMapCreated"
+    >
+      <MapLayer
+        v-for="layer in mapboxLayers"
+        :key="layer.id"
+        :layer="layer"
+        @click="(feature) => handleLayerClick(feature, layer.id)"
+        @mouseenter="(e) => handleLayerMouseenter(e, layer.id)"
+        @mouseleave="() => handleLayerMouseleave(layer.id)"
+      />
+      <!-- LayerPaintControl :id=layer.id, :newPaint -->
+    </mapbox-map>
+  </div>
+</template>
+<!-- Every time you need to change the color, you are calling an action from the store that is setting the current paint of the layer. and it is  setting the new Paint in the store-->
 <script setup>
-  import { MapboxMap } from '@studiometa/vue-mapbox-gl'
+import { MapboxMap } from '@studiometa/vue-mapbox-gl'
 import { computed, onBeforeUnmount, provide, ref, watch } from 'vue'
 import mapboxgl from 'mapbox-gl'
 import MapLayer from '@/components/MapLayer.vue'
@@ -404,29 +427,6 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<template>
-  <div class="map-wrapper">
-    <mapbox-map
-      v-model:map="mapInstance"
-      :access-token="accessToken"
-      :center="[5.1, 52.07]"
-      map-style="mapbox://styles/mapbox/light-v11"
-      :zoom="10.5"
-      @mb-created="onMapCreated"
-    >
-      <MapLayer
-        v-for="layer in mapboxLayers"
-        :key="layer.id"
-        :layer="layer"
-        @click="(feature) => handleLayerClick(feature, layer.id)"
-        @mouseenter="(e) => handleLayerMouseenter(e, layer.id)"
-        @mouseleave="() => handleLayerMouseleave(layer.id)"
-      />
-      <!-- LayerPaintControl :id=layer.id, :newPaint -->
-    </mapbox-map>
-  </div>
-</template>
-<!-- Every time you need to change the color, you are calling an action from the store that is setting the current paint of the layer. and it is  setting the new Paint in the store-->
 <style>
 .map-wrapper,
 .map-wrapper .mapboxgl-map {
