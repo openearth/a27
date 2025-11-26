@@ -84,6 +84,55 @@ export const useLocationsStore = defineStore('locations', {
         layout: {},
       }
     },
+    
+    // Computed paint properties that reactively update based on disabled categories
+    computedPaint () {
+      const appStore = useAppStore()
+      const disabledCategories = appStore.disabledCategories
+      const baseConfig = this.locationsLayerConfig
+      
+      if (!baseConfig || !baseConfig.paint) {
+        return {}
+      }
+      
+      // Get base paint properties
+      const basePaint = { ...baseConfig.paint }
+      
+      // Build opacity expression based on disabled categories
+      const opacityExpression = [
+        'case',
+        [ '==', [ 'get', 'bron_id' ], 1 ],
+        disabledCategories.has(1) ? 0.3 : 1,
+        [ '==', [ 'get', 'bron_id' ], 2 ],
+        disabledCategories.has(2) ? 0.3 : 1,
+        [ '==', [ 'get', 'bron_id' ], 3 ],
+        disabledCategories.has(3) ? 0.3 : 1,
+        [ '==', [ 'get', 'bron_id' ], 4 ],
+        disabledCategories.has(4) ? 0.3 : 1,
+        1,
+      ]
+      
+      // Build stroke color expression based on disabled categories
+      const strokeColorExpression = [
+        'case',
+        [ '==', [ 'get', 'bron_id' ], 1 ],
+        disabledCategories.has(1) ? 'rgba(153, 153, 153, 0.3)' : '#008fc5',
+        [ '==', [ 'get', 'bron_id' ], 2 ],
+        disabledCategories.has(2) ? 'rgba(153, 153, 153, 0.3)' : '#28a745',
+        [ '==', [ 'get', 'bron_id' ], 3 ],
+        disabledCategories.has(3) ? 'rgba(153, 153, 153, 0.3)' : '#ffc107',
+        [ '==', [ 'get', 'bron_id' ], 4 ],
+        disabledCategories.has(4) ? 'rgba(153, 153, 153, 0.3)' : '#895129',
+        '#6c757d',
+      ]
+      
+      // Return computed paint with updated opacity and stroke color
+      return {
+        ...basePaint,
+        'circle-opacity': opacityExpression,
+        'circle-stroke-color': strokeColorExpression,
+      }
+    },
   },
   
   actions: {

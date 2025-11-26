@@ -16,17 +16,23 @@
         @mouseenter="(e) => handleLayerMouseenter(e, layer.id)"
         @mouseleave="() => handleLayerMouseleave(layer.id)"
       />
-      <!-- LayerPaintControl :id=layer.id, :newPaint -->
+      <!-- LayerPaintControl for locations-layer: reactively applies paint based on disabled categories -->
+      <LayerPaintControl
+        v-if="locationsStore.locationsLayerConfig"
+        :id="'locations-layer'"
+        :paint="locationsStore.computedPaint"
+      />
     </mapbox-map>
   </div>
 </template>
-<!-- Every time you need to change the color, you are calling an action from the store that is setting the current paint of the layer. and it is  setting the new Paint in the store-->
+
 <script setup>
 import { MapboxMap } from '@studiometa/vue-mapbox-gl'
 import { computed, onBeforeUnmount, provide, ref, watch } from 'vue'
 import mapboxgl from 'mapbox-gl'
 import MapLayer from '@/components/MapLayer.vue'
-  import { useLocationsStore } from '@/stores/locations'
+import LayerPaintControl from '@/components/LayerPaintControl.vue'
+import { useLocationsStore } from '@/stores/locations'
 import { useMapStore } from '@/stores/map'
 import { useAppStore } from '@/stores/app'
 
@@ -202,59 +208,6 @@ function updateLocationsSourceData() {
   source.setData(featureCollection)
 }
 
-// Function to update paint properties based on disabled categories
-function updatePaintProperties() {
-  const mapObj = mapInstance.value
-  if (!mapObj) {
-    return
-  }
-  
-  if (!mapObj.getLayer('locations-layer')) {
-    return
-  }
-
-  const disabledCategories = appStore.disabledCategories
-
-  // Update circle opacity based on disabled categories
-  const opacityExpression = [
-    'case',
-    ['==', ['get', 'bron_id'], 1],
-    disabledCategories.has(1) ? 0.3 : 1,
-    ['==', ['get', 'bron_id'], 2],
-    disabledCategories.has(2) ? 0.3 : 1,
-    ['==', ['get', 'bron_id'], 3],
-    disabledCategories.has(3) ? 0.3 : 1,
-    ['==', ['get', 'bron_id'], 4],
-    disabledCategories.has(4) ? 0.3 : 1,
-    1,
-  ]
-
-  // Update stroke color to gray with transparency when disabled
-  const strokeColorExpression = [
-    'case',
-    ['==', ['get', 'bron_id'], 1],
-    disabledCategories.has(1) ? 'rgba(153, 153, 153, 0.3)' : '#008fc5',
-    ['==', ['get', 'bron_id'], 2],
-    disabledCategories.has(2) ? 'rgba(153, 153, 153, 0.3)' : '#28a745',
-    ['==', ['get', 'bron_id'], 3],
-    disabledCategories.has(3) ? 'rgba(153, 153, 153, 0.3)' : '#ffc107',
-    ['==', ['get', 'bron_id'], 4],
-    disabledCategories.has(4) ? 'rgba(153, 153, 153, 0.3)' : '#895129',
-    '#6c757d',
-  ]
-
-  mapObj.setPaintProperty(
-    'locations-layer',
-    'circle-opacity',
-    opacityExpression
-  )
-
-  mapObj.setPaintProperty(
-    'locations-layer',
-    'circle-stroke-color',
-    strokeColorExpression
-  )
-}
 
 // Watch for locations changes and refresh layers
 watch(
@@ -274,28 +227,6 @@ watch(
   }
 )
 
-// Watch for disabled categories changes and update paint properties
-const watchDisabledCategories = computed(() => {
-  return Array.from(appStore.disabledCategories).sort().join(',')
-})
-
-watch(
-  watchDisabledCategories,
-  () => {
-    setTimeout(() => {
-      updatePaintProperties()
-    }, 50)
-  }
-)
-
-watch(
-  () => appStore.disabledCategories.size,
-  () => {
-    setTimeout(() => {
-      updatePaintProperties()
-    }, 50)
-  }
-)
 
 // Setup direct map event listeners for locations-layer
 let locationsLayerListenersAttached = false
@@ -360,7 +291,6 @@ watch(
     if (locationsLayer && mapInstance.value) {
       const checkAndSetup = () => {
         if (mapInstance.value?.getLayer('locations-layer')) {
-          updatePaintProperties()
           setupLocationsLayerListeners()
           updateLocationsSourceData()
 
