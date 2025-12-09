@@ -65,8 +65,8 @@
             <h3 class="text-h6">
               Details meetlocatie
               {{
-                locationsStore.activeLocation?.properties?.locatie_id || "..."
-              }}
+                locationsStore.activeLocation?.properties?.locatienaam_master || "..."
+              }}{{ locationsStore.activeLocation?.properties?.locatie_id ? ` (${locationsStore.activeLocation.properties.locatie_id})` : "" }}
             </h3>
             <v-table>
               <tbody>
