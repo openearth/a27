@@ -17,6 +17,14 @@ export const usePeilfilterDataStore = defineStore('peilfilterData', {
       }
       return state.data.locationproperties.dlabel_filter
     },
+
+    // Get pompid_filter for the current peilfilterId
+    pompIdFilter (state) {
+      if (!state.data || !state.data.locationproperties || !state.data.locationproperties.peilfilter_id) {
+        return null
+      }
+      return state.data.locationproperties.pompid_filter
+    },
     
     // Get the peilfilter_id from the current data
     peilfilterId (state) {

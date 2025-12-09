@@ -70,28 +70,16 @@
             </h3>
             <v-table>
               <tbody>
-                <tr>
-                  <td>Locatienaam Master</td>
+                <tr v-if="hasValidDLabel">
+                  <td>DLabel</td>
                   <td>
-                    {{
-                      locationsStore.activeLocation?.properties?.locatie_id ||
-                        "..."
-                    }}
+                    {{ peilfilterDataStore.dlabelFilter }}
                   </td>
                 </tr>
-                <tr>
-                  <td>Coördinaten (EPSG:4326)</td>
+                <tr v-if="hasValidPompId">
+                  <td>Pomp Test code</td>
                   <td>
-                    {{
-                      locationsStore.activeLocation?.geometry?.coordinates?.[0].toFixed(
-                        6
-                      )
-                    }},
-                    {{
-                      locationsStore.activeLocation?.geometry?.coordinates?.[1].toFixed(
-                        6
-                      )
-                    }}
+                    {{ peilfilterDataStore.pompIdFilter }}
                   </td>
                 </tr>
                 <tr>
@@ -116,10 +104,19 @@
                     }}
                   </td>
                 </tr>
-                <tr v-if="hasValidDLabel">
-                  <td>DLabel</td>
+                <tr>
+                  <td>Coördinaten (EPSG:4326)</td>
                   <td>
-                    {{ peilfilterDataStore.dlabelFilter }}
+                    {{
+                      locationsStore.activeLocation?.geometry?.coordinates?.[0].toFixed(
+                        6
+                      )
+                    }},
+                    {{
+                      locationsStore.activeLocation?.geometry?.coordinates?.[1].toFixed(
+                        6
+                      )
+                    }}
                   </td>
                 </tr>
               </tbody>
@@ -201,6 +198,11 @@
   const hasValidDLabel = computed(() => {
     const dlabel = peilfilterDataStore.dlabelFilter;
     return dlabel !== null && dlabel !== undefined && dlabel !== '';
+  });
+
+  const hasValidPompId = computed(() => {
+    const pompid = peilfilterDataStore.pompIdFilter;
+    return pompid !== null && pompid !== undefined && pompid !== '';
   });
 
   // Update selectedPeilfilterId when activeLocation changes
