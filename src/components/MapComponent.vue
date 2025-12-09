@@ -193,16 +193,28 @@ function handleLayerMouseenter(e, layerId) {
 
   mapObj.getCanvas().style.cursor = 'pointer'
   const coords = feature.geometry.coordinates.slice()
-  const locatieId = feature.properties?.locatie_id || 'Unknown'
-  const peilfilterIds = feature.properties?.peilfilter_ids || ''
+  const locatienaamMaster = feature.properties?.locatienaam_master
+  const locatieId = feature.properties?.locatie_id
+  const peilfilterNaams = feature.properties?.peilfilternaams || ''
 
-  // Parse peilfilter IDs (comma-separated string)
-  const peilfilterList = peilfilterIds
-    ? peilfilterIds.split(',').map((id) => id.trim())
+  // Parse peilfilter Naams (comma-separated string)
+  const peilfilterList = peilfilterNaams
+    ? peilfilterNaams.split(',').map((id) => id.trim())
     : []
 
-  // Build HTML content
-  let htmlContent = `<div>Locatie ID: <strong>${locatieId}</strong></div>`
+  // Build HTML content for Locatie ID
+  let locatieIdHtml = 'Locatie ID: '
+  if (locatienaamMaster) {
+    locatieIdHtml += `<strong>${locatienaamMaster}</strong>`
+    if (locatieId) {
+      locatieIdHtml += ` (${locatieId})`
+    }
+  } else if (locatieId) {
+    locatieIdHtml += `<strong>${locatieId}</strong>`
+  } else {
+    locatieIdHtml += '<strong>Unknown</strong>'
+  }
+  let htmlContent = `<div>${locatieIdHtml}</div>`
 
   if (peilfilterList.length > 0) {
     const label =
