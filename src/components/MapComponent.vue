@@ -25,7 +25,7 @@
       
       <MapboxNavigationControl 
         :show-compass="false" 
-        position="bottom-right" 
+        position="top-right" 
       />
       
       <div class="map-controls">
@@ -436,7 +436,7 @@ onBeforeUnmount(() => {
 
 .map-controls {
   position: absolute;
-  bottom: 90px;  
+  top: 80px;  
   right: 10px;  
   z-index: 1000;
 }

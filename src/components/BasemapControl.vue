@@ -107,7 +107,7 @@
 
 .basemap-dropdown {
   position: absolute;
-  bottom: 100%;
+  top: 100%;
   right: 0;
   margin-bottom: 8px;
   background: white;

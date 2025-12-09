@@ -5,6 +5,7 @@ export const MAP_BASELAYERS = [
   { title: 'Light', uri: 'mapbox://styles/mapbox/light-v11' },
   { title: 'Dark', uri: 'mapbox://styles/mapbox/dark-v11' },
   { title: 'Satellite', uri: 'mapbox://styles/mapbox/satellite-v9' },
+  { title: 'Streets', uri: 'mapbox://styles/mapbox/streets-v12' },
 ]
 
 export const MAP_BASELAYER_DEFAULT = MAP_BASELAYERS[0]
