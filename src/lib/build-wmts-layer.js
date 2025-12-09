@@ -9,7 +9,6 @@ function buildWmtsLayer ({
   style = '',
   paint = {},
   mapServiceVersion = '1.0.0',
-  bbox = [],
   isVectorTiles = false,
   format,
 }) {

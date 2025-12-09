@@ -22,6 +22,7 @@
         default: () => {},
       },
     },
+    emits: ['click', 'mouseenter', 'mouseleave'],
     mounted () {
       const { map } = useMap()
       this.map = map
