@@ -116,6 +116,12 @@
                     }}
                   </td>
                 </tr>
+                <tr v-if="hasValidDLabel">
+                  <td>DLabel</td>
+                  <td>
+                    {{ peilfilterDataStore.dlabelFilter }}
+                  </td>
+                </tr>
               </tbody>
             </v-table>
           </div>
@@ -133,9 +139,11 @@
   import TimeSeriesChart from "@/components/TimeSeriesChart.vue";
   import { useAppStore } from "@/stores/app";
   import { useLocationsStore } from "@/stores/locations";
+  import { usePeilfilterDataStore } from "@/stores/peilfilterData";
 
   const appStore = useAppStore();
   const locationsStore = useLocationsStore();
+  const peilfilterDataStore = usePeilfilterDataStore();
 
   const panelIsCollapsed = computed(() => appStore.panelIsCollapsed);
 
@@ -190,6 +198,11 @@
     return ids.split(",").map((id) => id.trim());
   });
 
+  const hasValidDLabel = computed(() => {
+    const dlabel = peilfilterDataStore.dlabelFilter;
+    return dlabel !== null && dlabel !== undefined && dlabel !== '';
+  });
+
   // Update selectedPeilfilterId when activeLocation changes
   watch(
     () => locationsStore.activeLocation,
@@ -199,6 +212,20 @@
         selectedPeilfilterId.value = options.length > 0 ? options[0] : null;
       } else {
         selectedPeilfilterId.value = null;
+        peilfilterDataStore.clearData();
+      }
+    },
+    { immediate: true }
+  );
+
+  // Fetch peilfilter data when selectedPeilfilterId changes
+  watch(
+    () => selectedPeilfilterId.value,
+    (newId) => {
+      if (newId) {
+        peilfilterDataStore.fetchPeilfilterData(newId);
+      } else {
+        peilfilterDataStore.clearData();
       }
     },
     { immediate: true }
