@@ -34,32 +34,32 @@ function buildWmtsLayer ({
 
   return isVectorTiles || format === 'application/vnd.mapbox-vector-tile'
     ? {
-        'id': layer.split(':')[1],
-        layer,
-        'type': 'line',
-        'source': {
-          type: 'vector',
-          tiles: [tile],
-          // bounds: bbox,
-        },
-        'source-layer': layer.split(':')[1],
-        'paint': {
-          'fill-color': '#0080ff',
-          'fill-opacity': 1,
-        },
-      }
+      'id': layer.split(':')[1],
+      layer,
+      'type': 'line',
+      'source': {
+        type: 'vector',
+        tiles: [ tile ],
+        // bounds: bbox,
+      },
+      'source-layer': layer.split(':')[1],
+      'paint': {
+        'fill-color': '#0080ff',
+        'fill-opacity': 1,
+      },
+    }
     : {
-        id,
-        layer,
+      id,
+      layer,
+      type: 'raster',
+      source: {
         type: 'raster',
-        source: {
-          type: 'raster',
-          tiles: [tile],
-          tileSize: 256,
-          // bounds: bbox,
-        },
-        paint,
-      }
+        tiles: [ tile ],
+        tileSize: 256,
+        // bounds: bbox,
+      },
+      paint,
+    }
 }
 
 export default buildWmtsLayer
