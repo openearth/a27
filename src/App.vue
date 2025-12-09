@@ -90,8 +90,10 @@
                       dense
                       hide-details
                       :items="peilfilterOptions"
+                      item-title="title"
+                      item-value="value"
                       outlined
-                      style="max-width: 200px"
+                      style="max-width: 300px"
                     />
                   </td>
                 </tr>
@@ -190,9 +192,25 @@
   }
 
   const peilfilterOptions = computed(() => {
-    const ids = locationsStore.activeLocation?.properties?.peilfilter_ids;
+    const activeLocation = locationsStore.activeLocation;
+    if (!activeLocation?.properties) return [];
+    
+    const ids = activeLocation.properties.peilfilter_ids;
+    const naams = activeLocation.properties.peilfilternaams;
+    
     if (!ids) return [];
-    return ids.split(",").map((id) => id.trim());
+    
+    const idArray = ids.split(",").map((id) => id.trim());
+    const naamArray = naams ? naams.split(",").map((naam) => naam.trim()) : [];
+    
+    return idArray.map((id, index) => {
+      const naam = naamArray[index] || "";
+      const title = naam ? `${naam} (${id})` : id;
+      return {
+        value: id,
+        title: title,
+      };
+    });
   });
 
   const hasValidDLabel = computed(() => {
@@ -211,7 +229,7 @@
     (newLocation) => {
       if (newLocation) {
         const options = peilfilterOptions.value;
-        selectedPeilfilterId.value = options.length > 0 ? options[0] : null;
+        selectedPeilfilterId.value = options.length > 0 ? options[0].value : null;
       } else {
         selectedPeilfilterId.value = null;
         peilfilterDataStore.clearData();
@@ -281,7 +299,7 @@
 
 .details__table {
   flex: 0 0 auto;
-  width: 400px;
+  width: 500px;
 }
 
 .details__chart {
