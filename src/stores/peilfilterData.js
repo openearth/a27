@@ -33,6 +33,11 @@ export const usePeilfilterDataStore = defineStore('peilfilterData', {
       }
       return state.data.locationproperties.peilfilter_id
     },
+
+    timeseries (state) {
+      if (!state.data) return null
+      return state.data.timeseries ?? state.data
+    },
   },
   
   actions: {

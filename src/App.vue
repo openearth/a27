@@ -126,7 +126,7 @@
           </div>
 
           <div class="details__column details__chart">
-            <TimeSeriesChart :peilfilter-id="selectedPeilfilterId" />
+            <TimeSeriesChart />
           </div>
         </div>
       </div>
@@ -139,10 +139,12 @@
   import { useAppStore } from "@/stores/app";
   import { useLocationsStore } from "@/stores/locations";
   import { usePeilfilterDataStore } from "@/stores/peilfilterData";
+  import { usePrecipitationDataStore } from "@/stores/precipitationData";
 
   const appStore = useAppStore();
   const locationsStore = useLocationsStore();
   const peilfilterDataStore = usePeilfilterDataStore();
+  const precipitationDataStore = usePrecipitationDataStore();
 
   const panelIsCollapsed = computed(() => appStore.panelIsCollapsed);
 
@@ -223,16 +225,27 @@
     return pompid !== null && pompid !== undefined && pompid !== '';
   });
 
-  // Update selectedPeilfilterId when activeLocation changes
+  // Update selectedPeilfilterId and fetch precipitation when activeLocation changes
   watch(
     () => locationsStore.activeLocation,
     (newLocation) => {
       if (newLocation) {
+        // Clear both stores
+        peilfilterDataStore.clearData();
+        precipitationDataStore.clearData();
         const options = peilfilterOptions.value;
         selectedPeilfilterId.value = options.length > 0 ? options[0].value : null;
+        const x = newLocation.geometry?.coordinates?.[0];
+        const y = newLocation.geometry?.coordinates?.[1];
+        if (x != null && y != null) {
+          precipitationDataStore.fetchPrecipitationData(x, y);
+        } else {
+          precipitationDataStore.clearData();
+        }
       } else {
         selectedPeilfilterId.value = null;
         peilfilterDataStore.clearData();
+        precipitationDataStore.clearData();
       }
     },
     { immediate: true }
