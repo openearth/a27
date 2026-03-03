@@ -125,6 +125,10 @@
             </v-table>
           </div>
 
+          <div class="details__column peilfilter__chart">
+            <PeilfilterGraph />
+          </div>
+
           <div class="details__column details__chart">
             <TimeSeriesChart />
           </div>
@@ -135,13 +139,16 @@
 </template>
 <script setup>
   import { computed, ref, watch } from "vue";
+  import PeilfilterGraph from "@/components/PeilfilterGraph.vue";
   import TimeSeriesChart from "@/components/TimeSeriesChart.vue";
   import { useAppStore } from "@/stores/app";
+  import { useDepthInfoStore } from "@/stores/depthInfo";
   import { useLocationsStore } from "@/stores/locations";
   import { usePeilfilterDataStore } from "@/stores/peilfilterData";
   import { usePrecipitationDataStore } from "@/stores/precipitationData";
 
   const appStore = useAppStore();
+  const depthInfoStore = useDepthInfoStore();
   const locationsStore = useLocationsStore();
   const peilfilterDataStore = usePeilfilterDataStore();
   const precipitationDataStore = usePrecipitationDataStore();
@@ -230,11 +237,18 @@
     () => locationsStore.activeLocation,
     (newLocation) => {
       if (newLocation) {
-        // Clear both stores
         peilfilterDataStore.clearData();
         precipitationDataStore.clearData();
+        depthInfoStore.clearData();
         const options = peilfilterOptions.value;
         selectedPeilfilterId.value = options.length > 0 ? options[0].value : null;
+        const idsStr = newLocation.properties?.peilfilter_ids;
+        const peilfilterIds = idsStr
+          ? idsStr.split(",").map((id) => Number(id.trim())).filter((n) => !Number.isNaN(n))
+          : [];
+        if (peilfilterIds.length > 0) {
+          depthInfoStore.fetchDepthInfo(peilfilterIds);
+        }
         const x = newLocation.geometry?.coordinates?.[0];
         const y = newLocation.geometry?.coordinates?.[1];
         if (x != null && y != null) {
@@ -246,6 +260,7 @@
         selectedPeilfilterId.value = null;
         peilfilterDataStore.clearData();
         precipitationDataStore.clearData();
+        depthInfoStore.clearData();
       }
     },
     { immediate: true }
@@ -292,7 +307,6 @@
 
 .details {
   display: flex;
-  gap: 24px;
   height: 100%;
   padding: 24px 0;
   overflow: hidden;
@@ -313,6 +327,14 @@
 .details__table {
   flex: 0 0 auto;
   width: 500px;
+}
+
+.peilfilter__chart {
+  flex: 0 0 auto;
+  width: 250px;
+  overflow: hidden;
+  position: relative;
+  padding: 0 0;
 }
 
 .details__chart {

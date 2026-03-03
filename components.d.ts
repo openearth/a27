@@ -12,6 +12,7 @@ declare module 'vue' {
     LayerPaintControl: typeof import('./src/components/LayerPaintControl.vue')['default']
     MapComponent: typeof import('./src/components/MapComponent.vue')['default']
     MapLayer: typeof import('./src/components/MapLayer.vue')['default']
+    PeilfilterGraph: typeof import('./src/components/PeilfilterGraph.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     TimeSeriesChart: typeof import('./src/components/TimeSeriesChart.vue')['default']
