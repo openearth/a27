@@ -57,9 +57,10 @@
       .filter((p) => p.top != null && p.bottom != null)
       .sort((a, b) => a.bottom - b.bottom);
     if (filterList.length === 0) return null;
-    const allDepths = [topValue, ...filterList.flatMap((p) => [p.top, p.bottom])].filter((n) => n != null);
     const bottomValue =
-      api.peilbuis_bottom != null ? mToCm(api.peilbuis_bottom) : Math.min(...allDepths) - 50;
+      api.peilbuis_bottom != null
+        ? mToCm(api.peilbuis_bottom)
+        : Math.min(...filterList.map((p) => p.bottom));
     const topValueResolved = topValue ?? Math.max(...filterList.map((p) => p.top));
     return { topValue: topValueResolved, bottomValue, peilfilters: filterList };
   }
@@ -147,13 +148,16 @@
       lineStyle: { width: LINE_WIDTH, color: "#000" },
     });
 
-    chartInstance.setOption({
-      animation: false,
-      grid: GRID,
-      xAxis: { type: "value", min: -0.5, max: 0.5, show: false },
-      yAxis: { type: "value", min: yMin, max: yMax, show: false },
-      series,
-    });
+    chartInstance.setOption(
+      {
+        animation: false,
+        grid: GRID,
+        xAxis: { type: "value", min: -0.5, max: 0.5, show: false },
+        yAxis: { type: "value", min: yMin, max: yMax, show: false },
+        series,
+      },
+      { notMerge: true }
+    );
   }
 
   function initChart() {
