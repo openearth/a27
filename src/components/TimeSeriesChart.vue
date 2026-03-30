@@ -35,6 +35,7 @@
   const Y_AXIS_GROUNDWATER = { type: "value", name: "Grondwaterstand [cm NAP]", nameLocation: "middle", nameGap: 50, nameTextStyle: { fontSize: 13 } };
   const Y_AXIS_PRECIP = { type: "value", name: "Neerslag [mm]", nameLocation: "middle", nameGap: 50, nameTextStyle: { fontSize: 13 }, position: "right" };
   const SERIES_BASE = { type: "scatter", symbolSize: 4, showSymbol: false, animation: false, progressive: 0 };
+  const PRECIP_SERIES = { type: "bar", barWidth: 1.5, barMinHeight: 1, itemStyle: { color: "#4aa3ff" }, animation: false };
 
   function formatDate(value) {
     const date = new Date(value);
@@ -79,7 +80,7 @@
       series: hasPrecip
         ? [
           { ...SERIES_BASE, name: "Grondwaterstand", data: yGw, yAxisIndex: 0 },
-          { ...SERIES_BASE, name: "Neerslag", data: yPrecip, yAxisIndex: 1 },
+          { ...PRECIP_SERIES, name: "Neerslag", data: yPrecip, yAxisIndex: 1 },
         ]
         : [{ ...SERIES_BASE, name: "Grondwaterstand", data: yGw }],
     });
