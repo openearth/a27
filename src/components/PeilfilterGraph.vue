@@ -32,6 +32,7 @@
 
   const LINE_WIDTH = 3;
   const SYMBOL_SIZE = 6;
+  const LABEL_MIN_GAP_PX = 14;
   const LABEL_STYLE = { fontSize: 12, color: "#000" };
   const GRID = { left: 50, right: 50, top: 50, bottom: 50, containLabel: true };
 
@@ -75,6 +76,52 @@
     };
   }
 
+  function buildLeftLabelOffsets(peilfilters, yMin, yMax) {
+    const plotHeight = Math.max((chartRef.value?.clientHeight ?? 0) - GRID.top - GRID.bottom, 120);
+    const range = Math.max(yMax - yMin, 1);
+
+    const entries = peilfilters.flatMap((pf) => [
+      { key: `b-${pf.id}`, value: pf.bottom },
+      { key: `t-${pf.id}`, value: pf.top },
+    ]);
+
+    const withPx = entries
+      .map((e) => ({
+        ...e,
+        px: ((yMax - e.value) / range) * plotHeight,
+      }))
+      .sort((a, b) => a.px - b.px);
+
+    const adjusted = [];
+    withPx.forEach((entry, index) => {
+      if (index === 0) {
+        adjusted.push({ ...entry, adjustedPx: entry.px });
+        return;
+      }
+      const prev = adjusted[index - 1];
+      adjusted.push({
+        ...entry,
+        adjustedPx: Math.max(entry.px, prev.adjustedPx + LABEL_MIN_GAP_PX),
+      });
+    });
+
+    const overflow = adjusted.length > 0 ? adjusted[adjusted.length - 1].adjustedPx - plotHeight : 0;
+    if (overflow > 0) {
+      adjusted.forEach((e) => {
+        e.adjustedPx -= overflow;
+      });
+    }
+
+    return adjusted.reduce((acc, e) => {
+      acc[e.key] = Math.round(e.adjustedPx - e.px);
+      return acc;
+    }, {});
+  }
+
+  function isHighlightedPeilfilter(highlightedId, peilfilterId) {
+    return highlightedId != null && highlightedId === peilfilterId;
+  }
+
   function updateChart(chartData, highlightedId) {
     if (!chartInstance || !chartRef.value || !chartData) return;
 
@@ -89,12 +136,18 @@
 
     const bottomLabel = { formatter: () => `${bottomValue} cm`, position: "bottom", ...LABEL_STYLE };
     const topLabel = { formatter: () => `${topValue} cm`, position: "top", ...LABEL_STYLE };
-    const leftLabel = (val) => ({ formatter: () => `${val} cm`, position: "left", ...LABEL_STYLE });
+    const leftOffsets = buildLeftLabelOffsets(peilfilters, yMin, yMax);
+    const leftLabel = (key, val) => ({
+      formatter: () => `${val} cm`,
+      position: "left",
+      offset: [0, leftOffsets[key] ?? 0],
+      ...LABEL_STYLE,
+    });
 
     peilfilters.forEach((pf, index) => {
-      const highlight = highlightedId != null && highlightedId === pf.id;
+      const highlight = isHighlightedPeilfilter(highlightedId, pf.id);
       const color = segmentColor(highlight);
-      const prevHighlighted = index > 0 && highlightedId != null && highlightedId === peilfilters[index - 1].id;
+      const prevHighlighted = index > 0 && isHighlightedPeilfilter(highlightedId, peilfilters[index - 1].id);
       const connectorStartColor = currentY === bottomValue ? undefined : segmentColor(prevHighlighted);
 
       series.push({
@@ -106,7 +159,7 @@
             ...(connectorStartColor && { itemStyle: { color: connectorStartColor } }),
             ...(currentY === bottomValue && { label: bottomLabel }),
           }),
-          point(pf.bottom, { itemStyle: { color }, label: leftLabel(pf.bottom) }),
+          point(pf.bottom, { itemStyle: { color }, label: leftLabel(`b-${pf.id}`, pf.bottom) }),
         ],
         symbol: "circle",
         symbolSize: SYMBOL_SIZE,
@@ -118,7 +171,7 @@
         type: "line",
         data: [
           point(pf.bottom, { itemStyle: { color } }),
-          point(pf.top, { itemStyle: { color }, label: leftLabel(pf.top) }),
+          point(pf.top, { itemStyle: { color }, label: leftLabel(`t-${pf.id}`, pf.top) }),
         ],
         symbol: "circle",
         symbolSize: SYMBOL_SIZE,
@@ -128,7 +181,8 @@
       currentY = pf.top;
     });
 
-    const lastHighlighted = peilfilters.length > 0 && highlightedId != null && highlightedId === peilfilters[peilfilters.length - 1].id;
+    const lastHighlighted = peilfilters.length > 0
+      && isHighlightedPeilfilter(highlightedId, peilfilters[peilfilters.length - 1].id);
     const finalStartColor = currentY === bottomValue ? undefined : segmentColor(lastHighlighted);
 
     series.push({
@@ -151,6 +205,9 @@
     chartInstance.setOption(
       {
         animation: false,
+        title: {
+          text: "Peilbuisinformatie",
+        },
         grid: GRID,
         xAxis: { type: "value", min: -0.5, max: 0.5, show: false },
         yAxis: { type: "value", min: yMin, max: yMax, show: false },
