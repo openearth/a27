@@ -20,17 +20,13 @@
 <script setup>
   import * as echarts from "echarts";
   import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-  import { usePeilfilterDataStore } from "@/stores/peilfilterData";
-  import { usePrecipitationDataStore } from "@/stores/precipitationData";
+  import { useChartTimeseriesStore } from "@/stores/chartTimeseries";
 
   const chartRef = ref(null);
   let chartInstance = null;
-  const peilfilterDataStore = usePeilfilterDataStore();
-  const precipitationDataStore = usePrecipitationDataStore();
+  const chartTimeseriesStore = useChartTimeseriesStore();
 
-  const chartDataLoading = computed(
-    () => peilfilterDataStore.loading || precipitationDataStore.loading
-  );
+  const chartDataLoading = computed(() => chartTimeseriesStore.loading);
 
   const Y_AXIS_GROUNDWATER = { type: "value", name: "Grondwaterstand [cm NAP]", nameLocation: "middle", nameGap: 50, nameTextStyle: { fontSize: 13 } };
   const Y_AXIS_PRECIP = { type: "value", name: "Neerslag [mm]", nameLocation: "middle", nameGap: 50, nameTextStyle: { fontSize: 13 }, position: "right" };
@@ -59,7 +55,8 @@
   function updateChart(gwTimeseries, precipTimeseries) {
     if (!chartInstance) return;
     const gw = Array.isArray(gwTimeseries) ? gwTimeseries : [];
-    const precip = Array.isArray(precipTimeseries) ? precipTimeseries : [];
+    let precip = Array.isArray(precipTimeseries) ? precipTimeseries : [];
+    precip = precip.filter((t) => t && t.show !== false);
     const xSet = new Set();
     gw.forEach((t) => t.datetime && xSet.add(t.datetime));
     precip.forEach((t) => {
@@ -189,13 +186,12 @@
 
   watch(
     () => [
-      peilfilterDataStore.timeseries,
-      precipitationDataStore.timeseries,
-      peilfilterDataStore.loading,
-      precipitationDataStore.loading,
+      chartTimeseriesStore.groundwaterTimeseries,
+      chartTimeseriesStore.precipitationTimeseries,
+      chartTimeseriesStore.loading,
     ],
-    ([gw, precip, loadingGw, loadingPrecip]) => {
-      if (loadingGw || loadingPrecip) return;
+    ([gw, precip, loading]) => {
+      if (loading) return;
       nextTick(() => updateChart(gw ?? [], precip ?? []));
     },
     { immediate: true }

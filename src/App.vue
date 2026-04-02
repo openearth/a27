@@ -144,14 +144,14 @@
   import { useAppStore } from "@/stores/app";
   import { useDepthInfoStore } from "@/stores/depthInfo";
   import { useLocationsStore } from "@/stores/locations";
+  import { useChartTimeseriesStore } from "@/stores/chartTimeseries";
   import { usePeilfilterDataStore } from "@/stores/peilfilterData";
-  import { usePrecipitationDataStore } from "@/stores/precipitationData";
 
   const appStore = useAppStore();
+  const chartTimeseriesStore = useChartTimeseriesStore();
   const depthInfoStore = useDepthInfoStore();
   const locationsStore = useLocationsStore();
   const peilfilterDataStore = usePeilfilterDataStore();
-  const precipitationDataStore = usePrecipitationDataStore();
 
   const panelIsCollapsed = computed(() => appStore.panelIsCollapsed);
 
@@ -232,49 +232,109 @@
     return pompid !== null && pompid !== undefined && pompid !== '';
   });
 
-  // Update selectedPeilfilterId and fetch precipitation when activeLocation changes
+  function syncPeilfilterDetailsFromLocation(location, peilfilterId) {
+    if (!location) {
+      peilfilterDataStore.clearData();
+      return;
+    }
+    const idStr =
+      peilfilterId != null && peilfilterId !== ""
+        ? String(peilfilterId)
+        : null;
+    if (!idStr) {
+      peilfilterDataStore.setPeilfilterDetails({
+        peilfilterId: null,
+        dlabelFilter: null,
+        pompidFilter: null,
+      });
+      return;
+    }
+    const idsStr = location.properties?.peilfilter_ids;
+    let dlabel = null;
+    let pompid = null;
+    if (idsStr) {
+      const idArray = idsStr.split(",").map((id) => id.trim());
+      const idx = idArray.indexOf(idStr);
+      if (idx >= 0) {
+        const dlabelsStr = location.properties?.dlabel_filters;
+        const pompidsStr =
+          location.properties?.pompids ?? location.properties?.pompids_filters;
+        if (dlabelsStr) {
+          const parts = dlabelsStr.split(",").map((s) => s.trim());
+          dlabel = parts[idx] || null;
+        }
+        if (pompidsStr) {
+          const parts = pompidsStr.split(",").map((s) => s.trim());
+          pompid = parts[idx] || null;
+        }
+      }
+    }
+    peilfilterDataStore.setPeilfilterDetails({
+      peilfilterId: idStr,
+      dlabelFilter: dlabel,
+      pompidFilter: pompid,
+    });
+  }
+
+  // Update selected peilfilter and depth info when activeLocation changes
   watch(
     () => locationsStore.activeLocation,
     (newLocation) => {
       if (newLocation) {
+        chartTimeseriesStore.clearData();
         peilfilterDataStore.clearData();
-        precipitationDataStore.clearData();
         depthInfoStore.clearData();
         const options = peilfilterOptions.value;
-        selectedPeilfilterId.value = options.length > 0 ? options[0].value : null;
+        selectedPeilfilterId.value =
+          options.length > 0 ? options[0].value : null;
         const idsStr = newLocation.properties?.peilfilter_ids;
         const peilfilterIds = idsStr
-          ? idsStr.split(",").map((id) => Number(id.trim())).filter((n) => !Number.isNaN(n))
+          ? idsStr
+            .split(",")
+            .map((id) => Number(id.trim()))
+            .filter((n) => !Number.isNaN(n))
           : [];
         if (peilfilterIds.length > 0) {
           depthInfoStore.fetchDepthInfo(peilfilterIds);
         }
-        const x = newLocation.geometry?.coordinates?.[0];
-        const y = newLocation.geometry?.coordinates?.[1];
-        if (x != null && y != null) {
-          precipitationDataStore.fetchPrecipitationData(x, y);
-        } else {
-          precipitationDataStore.clearData();
-        }
       } else {
         selectedPeilfilterId.value = null;
+        chartTimeseriesStore.clearData();
         peilfilterDataStore.clearData();
-        precipitationDataStore.clearData();
         depthInfoStore.clearData();
       }
     },
     { immediate: true }
   );
 
-  // Fetch peilfilter data when selectedPeilfilterId changes
+  // One WPS call for both series; point id follows selected peilfilter, else locatie_id.
+  // Depends on activeLocation too so we refetch when the map selection changes even if peilfilter id stays the same.
   watch(
-    () => selectedPeilfilterId.value,
-    (newId) => {
-      if (newId) {
-        peilfilterDataStore.fetchPeilfilterData(newId);
-      } else {
-        peilfilterDataStore.clearData();
+    [() => locationsStore.activeLocation, () => selectedPeilfilterId.value],
+    ([loc, newId]) => {
+      if (!loc) {
+        return;
       }
+      syncPeilfilterDetailsFromLocation(loc, newId);
+      const x = loc.geometry?.coordinates?.[0];
+      const y = loc.geometry?.coordinates?.[1];
+      if (x == null || y == null) {
+        chartTimeseriesStore.clearData();
+        return;
+      }
+      const pointId =
+        newId != null && newId !== ""
+          ? newId
+          : loc.properties?.locatie_id;
+      if (pointId == null || pointId === "") {
+        chartTimeseriesStore.clearData();
+        return;
+      }
+      chartTimeseriesStore.fetchTimeseriesData({
+        id: String(pointId),
+        x,
+        y,
+      });
     },
     { immediate: true }
   );

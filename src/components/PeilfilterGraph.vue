@@ -130,8 +130,10 @@
     }, {});
   }
 
+  /** Compare as strings so v-select values (strings) match API peilfilter_id (often numbers). */
   function isHighlightedPeilfilter(highlightedId, peilfilterId) {
-    return highlightedId != null && highlightedId === peilfilterId;
+    if (highlightedId == null || peilfilterId == null) return false;
+    return String(highlightedId) === String(peilfilterId);
   }
 
   function updateChart(chartData, highlightedId) {
