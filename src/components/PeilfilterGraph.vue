@@ -34,33 +34,45 @@
   const SYMBOL_SIZE = 6;
   const LABEL_MIN_GAP_PX = 14;
   const LABEL_STYLE = { fontSize: 12, color: "#000" };
-  const GRID = { left: 50, right: 50, top: 50, bottom: 50, containLabel: true };
+  /** Horizontally center plot so x=0 (vertical line) aligns with column center; width leaves side space for labels. */
+  const GRID = {
+    left: "center",
+    width: "82%",
+    top: 52,
+    bottom: 50,
+    containLabel: false,
+  };
 
   const NAP_MARK_LINE = {
     silent: true,
     symbol: "none",
     lineStyle: { color: "#999", width: 1 },
     data: [{ yAxis: 0 }],
-    label: { show: true, formatter: () => "NAP", fontSize: 12, color: "#333" },
+    label: {
+      show: true,
+      formatter: () => "NAP",
+      position: "insideStartTop",
+      fontSize: 12,
+      color: "#333",
+    },
   };
 
-  /** Map API depth info (meters) to chart data (cm NAP). */
+  /** Map API depth info to chart data. */
   function mapDepthResponseToChartData(api) {
     if (!api?.filters?.length) return null;
-    const mToCm = (m) => (m != null && typeof m === "number" ? Math.round(m * 100) : null);
-    const topValue = mToCm(api.peilbuis_top);
+    const topValue = api.peilbuis_top;
     const filterList = api.filters
       .map((f) => ({
         id: f.peilfilter_id,
-        top: mToCm(f.filter_top),
-        bottom: mToCm(f.filter_bottom),
+        top: f.filter_top,
+        bottom: f.filter_bottom,
       }))
       .filter((p) => p.top != null && p.bottom != null)
       .sort((a, b) => a.bottom - b.bottom);
     if (filterList.length === 0) return null;
     const bottomValue =
       api.peilbuis_bottom != null
-        ? mToCm(api.peilbuis_bottom)
+        ? api.peilbuis_bottom
         : Math.min(...filterList.map((p) => p.bottom));
     const topValueResolved = topValue ?? Math.max(...filterList.map((p) => p.top));
     return { topValue: topValueResolved, bottomValue, peilfilters: filterList };
@@ -127,18 +139,19 @@
 
     const { topValue, bottomValue, peilfilters } = chartData;
     const yValues = [topValue, bottomValue, 0, ...peilfilters.flatMap((p) => [p.top, p.bottom])];
-    const yMin = Math.min(...yValues) - 10;
-    const yMax = Math.max(...yValues) + 10;
+    /** Control the resizing of the line, specially when the values are small. */
+    const yMin = Math.min(...yValues) - 1;
+    const yMax = Math.max(...yValues) + 1;
 
     const segmentColor = (highlight) => (highlight ? "#e53935" : "#000");
     const series = [];
     let currentY = bottomValue;
 
-    const bottomLabel = { formatter: () => `${bottomValue} cm`, position: "bottom", ...LABEL_STYLE };
-    const topLabel = { formatter: () => `${topValue} cm`, position: "top", ...LABEL_STYLE };
+    const bottomLabel = { formatter: () => `${bottomValue} m`, position: "bottom", offset: [24, 0], ...LABEL_STYLE };
+    const topLabel = { formatter: () => `${topValue} m`, position: "top", offset: [24, 0],...LABEL_STYLE };
     const leftOffsets = buildLeftLabelOffsets(peilfilters, yMin, yMax);
     const leftLabel = (key, val) => ({
-      formatter: () => `${val} cm`,
+      formatter: () => `${val} m`,
       position: "left",
       offset: [0, leftOffsets[key] ?? 0],
       ...LABEL_STYLE,
@@ -207,6 +220,7 @@
         animation: false,
         title: {
           text: "Peilbuisinformatie",
+          textAlign: "left",
         },
         grid: GRID,
         xAxis: { type: "value", min: -0.5, max: 0.5, show: false },
