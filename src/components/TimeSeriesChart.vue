@@ -57,29 +57,26 @@
     const gw = Array.isArray(gwTimeseries) ? gwTimeseries : [];
     let precip = Array.isArray(precipTimeseries) ? precipTimeseries : [];
     precip = precip.filter((t) => t && t.show !== false);
-    const xSet = new Set();
-    gw.forEach((t) => t.datetime && xSet.add(t.datetime));
-    precip.forEach((t) => {
-      const dt = getPrecipitationDatetime(t);
-      if (dt) xSet.add(dt);
-    });
-    const xData = Array.from(xSet).sort();
-    const gwByDate = Object.fromEntries(gw.map((t) => [t.datetime, t.head]));
-    const precipByDate = Object.fromEntries(
-      precip.map((t) => [getPrecipitationDatetime(t), getPrecipitationValue(t)]).filter(([dt]) => dt != null)
-    );
-    const yGw = xData.map((d) => gwByDate[d] ?? null);
-    const yPrecip = xData.map((d) => precipByDate[d] ?? null);
-    const hasPrecip = yPrecip.some((v) => v != null);
+    const gwPoints = gw
+      .map((t) => (t?.datetime ? [t.datetime, t.head ?? null] : null))
+      .filter((point) => point != null);
+    const precipPoints = precip
+      .map((t) => {
+        const dt = getPrecipitationDatetime(t);
+        const value = getPrecipitationValue(t);
+        return dt != null && value != null ? [dt, value] : null;
+      })
+      .filter((point) => point != null);
+    const hasPrecip = precipPoints.length > 0;
     chartInstance.setOption({
-      xAxis: { data: xData },
+      xAxis: { type: "time" },
       yAxis: hasPrecip ? [Y_AXIS_GROUNDWATER, Y_AXIS_PRECIP] : Y_AXIS_GROUNDWATER,
       series: hasPrecip
         ? [
-          { ...SERIES_BASE, name: "Grondwaterstand", data: yGw, yAxisIndex: 0 },
-          { ...PRECIP_SERIES, name: "Neerslag", data: yPrecip, yAxisIndex: 1 },
+          { ...SERIES_BASE, name: "Grondwaterstand", data: gwPoints, yAxisIndex: 0 },
+          { ...PRECIP_SERIES, name: "Neerslag", data: precipPoints, yAxisIndex: 1 },
         ]
-        : [{ ...SERIES_BASE, name: "Grondwaterstand", data: yGw }],
+        : [{ ...SERIES_BASE, name: "Grondwaterstand", data: gwPoints }],
     });
   }
 
@@ -99,11 +96,11 @@
         trigger: "axis",
         formatter: (params) => {
           if (!params || !params.length) return "";
-          const formattedDate = formatDate(params[0].name);
+          const formattedDate = formatDate(params[0].axisValue);
           let result = `${formattedDate}<br/>`;
           params.forEach((param) => {
             const unit = param.seriesName === "Neerslag" ? " mm" : " cm NAP";
-            const val = param.value;
+            const val = Array.isArray(param.value) ? param.value[1] : param.value;
             const display = val != null && !Number.isNaN(Number(val)) ? Number(val).toFixed(2) : "–";
             result += `${param.marker} ${param.seriesName}: ${display}${unit}<br/>`;
           });
@@ -125,11 +122,7 @@
           height: 25,
           bottom: 20,
           brushSelect: false,
-          labelFormatter: (value, valueStr) => {
-            const option = chartInstance.getOption();
-            const xAxisData = option.xAxis[0].data;
-            return xAxisData && xAxisData[value] ? formatDate(xAxisData[value]) : valueStr;
-          },
+          labelFormatter: (value) => formatDate(value),
         },
         {
           type: "inside",
@@ -138,8 +131,7 @@
         },
       ],
       xAxis: {
-        type: "category",
-        data: [],
+        type: "time",
         name: "Datum [-]",
         nameLocation: "middle",
         nameGap: 55,
@@ -149,8 +141,6 @@
         axisLabel: {
           formatter: formatDate,
           rotate: 25,
-          minInterval: 100000,
-          maxInterval: 100000,
         },
         splitLine: {
           show: true,
