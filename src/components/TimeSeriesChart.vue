@@ -91,6 +91,8 @@
       animationDurationUpdate: 0,
       title: {
         text: "Tijdserie grondwaterstanden",
+        top: 8,
+        left: 0,
       },
       tooltip: {
         trigger: "axis",
@@ -107,12 +109,15 @@
           return result;
         },
       },
-      legend: {},
+      legend: {
+        top: 34,
+        left: "center",
+      },
       grid: {
         left: 80,
         right: 80,
         bottom: 120,
-        top: 60,
+        top: 86,
       },
       dataZoom: [
         {
