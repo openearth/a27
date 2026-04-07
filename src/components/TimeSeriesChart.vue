@@ -132,6 +132,7 @@
       ],
       xAxis: {
         type: "time",
+        splitNumber: 12,
         name: "Datum [-]",
         nameLocation: "middle",
         nameGap: 55,
@@ -141,6 +142,7 @@
         axisLabel: {
           formatter: formatDate,
           rotate: 25,
+          hideOverlap: false,
         },
         splitLine: {
           show: true,
