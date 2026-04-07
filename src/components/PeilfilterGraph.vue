@@ -152,11 +152,13 @@
     const bottomLabel = { formatter: () => `${bottomValue} m`, position: "bottom", offset: [24, 0], ...LABEL_STYLE };
     const topLabel = { formatter: () => `${topValue} m`, position: "top", offset: [24, 0],...LABEL_STYLE };
     const leftOffsets = buildLeftLabelOffsets(peilfilters, yMin, yMax);
-    const leftLabel = (key, val) => ({
+    const leftLabel = (key, val, highlight = false) => ({
       formatter: () => `${val} m`,
       position: "left",
       offset: [0, leftOffsets[key] ?? 0],
       ...LABEL_STYLE,
+      color: highlight ? "#e53935" : LABEL_STYLE.color,
+      fontWeight: highlight ? "700" : "400",
     });
 
     peilfilters.forEach((pf, index) => {
@@ -174,7 +176,7 @@
             ...(connectorStartColor && { itemStyle: { color: connectorStartColor } }),
             ...(currentY === bottomValue && { label: bottomLabel }),
           }),
-          point(pf.bottom, { itemStyle: { color }, label: leftLabel(`b-${pf.id}`, pf.bottom) }),
+          point(pf.bottom, { itemStyle: { color }, label: leftLabel(`b-${pf.id}`, pf.bottom, highlight) }),
         ],
         symbol: "circle",
         symbolSize: SYMBOL_SIZE,
@@ -186,7 +188,7 @@
         type: "line",
         data: [
           point(pf.bottom, { itemStyle: { color } }),
-          point(pf.top, { itemStyle: { color }, label: leftLabel(`t-${pf.id}`, pf.top) }),
+          point(pf.top, { itemStyle: { color }, label: leftLabel(`t-${pf.id}`, pf.top, highlight) }),
         ],
         symbol: "circle",
         symbolSize: SYMBOL_SIZE,
