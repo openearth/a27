@@ -79,7 +79,7 @@
                 <tr v-if="hasValidPompId">
                   <td>Pomp Test code</td>
                   <td>
-                    {{ peilfilterDataStore.pompIdFilter }}
+                    {{ peilfilterDataStore.pompidFilter }}
                   </td>
                 </tr>
                 <tr>
@@ -228,9 +228,19 @@
   });
 
   const hasValidPompId = computed(() => {
-    const pompid = peilfilterDataStore.pompIdFilter;
+    const pompid = peilfilterDataStore.pompidFilter;
     return pompid !== null && pompid !== undefined && pompid !== '';
   });
+
+  function clearPanelDataStores() {
+    chartTimeseriesStore.clearData();
+    peilfilterDataStore.clearData();
+    depthInfoStore.clearData();
+  }
+
+  function commaSplit(str) {
+    return str.split(",").map((s) => s.trim());
+  }
 
   function syncPeilfilterDetailsFromLocation(location, peilfilterId) {
     if (!location) {
@@ -242,31 +252,24 @@
         ? String(peilfilterId)
         : null;
     if (!idStr) {
-      peilfilterDataStore.setPeilfilterDetails({
-        peilfilterId: null,
-        dlabelFilter: null,
-        pompidFilter: null,
-      });
+      peilfilterDataStore.clearData();
       return;
     }
+
     const idsStr = location.properties?.peilfilter_ids;
     let dlabel = null;
     let pompid = null;
     if (idsStr) {
-      const idArray = idsStr.split(",").map((id) => id.trim());
-      const idx = idArray.indexOf(idStr);
+      const idx = commaSplit(idsStr).indexOf(idStr);
       if (idx >= 0) {
-        const dlabelsStr = location.properties?.dlabel_filters;
-        const pompidsStr =
-          location.properties?.pompids ?? location.properties?.pompids_filters;
-        if (dlabelsStr) {
-          const parts = dlabelsStr.split(",").map((s) => s.trim());
-          dlabel = parts[idx] || null;
-        }
-        if (pompidsStr) {
-          const parts = pompidsStr.split(",").map((s) => s.trim());
-          pompid = parts[idx] || null;
-        }
+        const at = (key) => {
+          const raw = location.properties?.[key];
+          if (!raw) return null;
+          const parts = commaSplit(raw);
+          return parts[idx] || null;
+        };
+        dlabel = at("dlabel_filters");
+        pompid = at("pompids") ?? at("pompids_filters");
       }
     }
     peilfilterDataStore.setPeilfilterDetails({
@@ -276,45 +279,36 @@
     });
   }
 
-  // Update selected peilfilter and depth info when activeLocation changes
   watch(
     () => locationsStore.activeLocation,
     (newLocation) => {
-      if (newLocation) {
-        chartTimeseriesStore.clearData();
-        peilfilterDataStore.clearData();
-        depthInfoStore.clearData();
-        const options = peilfilterOptions.value;
-        selectedPeilfilterId.value =
-          options.length > 0 ? options[0].value : null;
-        const idsStr = newLocation.properties?.peilfilter_ids;
-        const peilfilterIds = idsStr
-          ? idsStr
-            .split(",")
-            .map((id) => Number(id.trim()))
-            .filter((n) => !Number.isNaN(n))
-          : [];
-        if (peilfilterIds.length > 0) {
-          depthInfoStore.fetchDepthInfo(peilfilterIds);
-        }
-      } else {
+      if (!newLocation) {
         selectedPeilfilterId.value = null;
-        chartTimeseriesStore.clearData();
-        peilfilterDataStore.clearData();
-        depthInfoStore.clearData();
+        clearPanelDataStores();
+        return;
+      }
+      clearPanelDataStores();
+      const options = peilfilterOptions.value;
+      selectedPeilfilterId.value =
+        options.length > 0 ? options[0].value : null;
+      const idsStr = newLocation.properties?.peilfilter_ids;
+      const peilfilterIds = idsStr
+        ? commaSplit(idsStr)
+          .map((id) => Number(id))
+          .filter((n) => !Number.isNaN(n))
+        : [];
+      if (peilfilterIds.length > 0) {
+        depthInfoStore.fetchDepthInfo(peilfilterIds);
       }
     },
     { immediate: true }
   );
 
-  // One WPS call for both series; point id follows selected peilfilter, else locatie_id.
-  // Depends on activeLocation too so we refetch when the map selection changes even if peilfilter id stays the same.
+  /** Refetch when the map point or peilfilter dropdown changes (same id on two points still updates x/y). */
   watch(
     [() => locationsStore.activeLocation, () => selectedPeilfilterId.value],
     ([loc, newId]) => {
-      if (!loc) {
-        return;
-      }
+      if (!loc) return;
       syncPeilfilterDetailsFromLocation(loc, newId);
       const x = loc.geometry?.coordinates?.[0];
       const y = loc.geometry?.coordinates?.[1];
@@ -323,18 +317,12 @@
         return;
       }
       const pointId =
-        newId != null && newId !== ""
-          ? newId
-          : loc.properties?.locatie_id;
+        newId != null && newId !== "" ? newId : loc.properties?.locatie_id;
       if (pointId == null || pointId === "") {
         chartTimeseriesStore.clearData();
         return;
       }
-      chartTimeseriesStore.fetchTimeseriesData({
-        id: String(pointId),
-        x,
-        y,
-      });
+      chartTimeseriesStore.fetchTimeseriesData({ id: pointId, x, y });
     },
     { immediate: true }
   );

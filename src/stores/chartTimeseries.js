@@ -1,6 +1,9 @@
-// Combined groundwater + precipitation series for TimeSeriesChart (single WPS call)
 import { defineStore } from 'pinia'
 import getTimeseriesData from '@/lib/get-timeseries-data'
+
+function pointInfoIncomplete(p) {
+  return !p || p.id == null || p.id === '' || p.x == null || p.y == null
+}
 
 export const useChartTimeseriesStore = defineStore('chartTimeseries', {
   state: () => ({
@@ -12,7 +15,7 @@ export const useChartTimeseriesStore = defineStore('chartTimeseries', {
 
   actions: {
     async fetchTimeseriesData(pointinfo) {
-      if (!pointinfo || pointinfo.id == null || pointinfo.id === '' || pointinfo.x == null || pointinfo.y == null) {
+      if (pointInfoIncomplete(pointinfo)) {
         this.groundwaterTimeseries = null
         this.precipitationTimeseries = null
         this.error = null
