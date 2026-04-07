@@ -195,12 +195,17 @@
     const coords = feature.geometry.coordinates.slice()
     const locatienaamMaster = feature.properties?.locatienaam_master
     const locatieId = feature.properties?.locatie_id
+    const peilfilterIds = feature.properties?.peilfilter_ids || ''
     const peilfilterNaams = feature.properties?.peilfilternaams || ''
-
-    // Parse peilfilter Naams (comma-separated string)
-    const peilfilterList = peilfilterNaams
-      ? peilfilterNaams.split(',').map((id) => id.trim())
-      : []
+    const idList = peilfilterIds ? peilfilterIds.split(',').map((id) => id.trim()) : []
+    const naamList = peilfilterNaams ? peilfilterNaams.split(',').map((naam) => naam.trim()) : []
+    const peilfilterList = idList
+      .map((id, index) => ({
+        id,
+        naam: naamList[index] || '',
+      }))
+      .sort((a, b) => Number(a.id) - Number(b.id))
+      .map((item) => item.naam || item.id)
 
     // Build HTML content for Locatie ID
     let locatieIdHtml = 'Locatie ID: '

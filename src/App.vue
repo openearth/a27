@@ -212,14 +212,16 @@
     const idArray = ids.split(",").map((id) => id.trim());
     const naamArray = naams ? naams.split(",").map((naam) => naam.trim()) : [];
     
-    return idArray.map((id, index) => {
-      const naam = naamArray[index] || "";
-      const title = naam ? `${naam} (${id})` : id;
-      return {
-        value: id,
-        title: title,
-      };
-    });
+    return idArray
+      .map((id, index) => {
+        const naam = naamArray[index] || "";
+        const title = naam ? `${naam} (${id})` : id;
+        return {
+          value: id,
+          title,
+        };
+      })
+      .sort((a, b) => Number(a.value) - Number(b.value));
   });
 
   const hasValidDLabel = computed(() => {
