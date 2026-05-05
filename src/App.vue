@@ -79,7 +79,7 @@
                 <tr v-if="hasValidPompId">
                   <td>Pomp Test code</td>
                   <td>
-                    {{ peilfilterDataStore.pompIdFilter }}
+                    {{ peilfilterDataStore.pompidFilter }}
                   </td>
                 </tr>
                 <tr>
@@ -125,8 +125,12 @@
             </v-table>
           </div>
 
+          <div class="details__column peilfilter__chart">
+            <PeilfilterGraph />
+          </div>
+
           <div class="details__column details__chart">
-            <TimeSeriesChart :peilfilter-id="selectedPeilfilterId" />
+            <TimeSeriesChart />
           </div>
         </div>
       </div>
@@ -135,12 +139,17 @@
 </template>
 <script setup>
   import { computed, ref, watch } from "vue";
+  import PeilfilterGraph from "@/components/PeilfilterGraph.vue";
   import TimeSeriesChart from "@/components/TimeSeriesChart.vue";
   import { useAppStore } from "@/stores/app";
+  import { useDepthInfoStore } from "@/stores/depthInfo";
   import { useLocationsStore } from "@/stores/locations";
+  import { useChartTimeseriesStore } from "@/stores/chartTimeseries";
   import { usePeilfilterDataStore } from "@/stores/peilfilterData";
 
   const appStore = useAppStore();
+  const chartTimeseriesStore = useChartTimeseriesStore();
+  const depthInfoStore = useDepthInfoStore();
   const locationsStore = useLocationsStore();
   const peilfilterDataStore = usePeilfilterDataStore();
 
@@ -203,14 +212,16 @@
     const idArray = ids.split(",").map((id) => id.trim());
     const naamArray = naams ? naams.split(",").map((naam) => naam.trim()) : [];
     
-    return idArray.map((id, index) => {
-      const naam = naamArray[index] || "";
-      const title = naam ? `${naam} (${id})` : id;
-      return {
-        value: id,
-        title: title,
-      };
-    });
+    return idArray
+      .map((id, index) => {
+        const naam = naamArray[index] || "";
+        const title = naam ? `${naam} (${id})` : id;
+        return {
+          value: id,
+          title,
+        };
+      })
+      .sort((a, b) => Number(a.value) - Number(b.value));
   });
 
   const hasValidDLabel = computed(() => {
@@ -219,34 +230,101 @@
   });
 
   const hasValidPompId = computed(() => {
-    const pompid = peilfilterDataStore.pompIdFilter;
+    const pompid = peilfilterDataStore.pompidFilter;
     return pompid !== null && pompid !== undefined && pompid !== '';
   });
 
-  // Update selectedPeilfilterId when activeLocation changes
+  function clearPanelDataStores() {
+    chartTimeseriesStore.clearData();
+    peilfilterDataStore.clearData();
+    depthInfoStore.clearData();
+  }
+
+  function commaSplit(str) {
+    return str.split(",").map((s) => s.trim());
+  }
+
+  function syncPeilfilterDetailsFromLocation(location, peilfilterId) {
+    if (!location) {
+      peilfilterDataStore.clearData();
+      return;
+    }
+    const idStr =
+      peilfilterId != null && peilfilterId !== ""
+        ? String(peilfilterId)
+        : null;
+    if (!idStr) {
+      peilfilterDataStore.clearData();
+      return;
+    }
+
+    const idsStr = location.properties?.peilfilter_ids;
+    let dlabel = null;
+    let pompid = null;
+    if (idsStr) {
+      const idx = commaSplit(idsStr).indexOf(idStr);
+      if (idx >= 0) {
+        const at = (key) => {
+          const raw = location.properties?.[key];
+          if (!raw) return null;
+          const parts = commaSplit(raw);
+          return parts[idx] || null;
+        };
+        dlabel = at("dlabel_filters");
+        pompid = at("pompids") ?? at("pompids_filters");
+      }
+    }
+    peilfilterDataStore.setPeilfilterDetails({
+      peilfilterId: idStr,
+      dlabelFilter: dlabel,
+      pompidFilter: pompid,
+    });
+  }
+
   watch(
     () => locationsStore.activeLocation,
     (newLocation) => {
-      if (newLocation) {
-        const options = peilfilterOptions.value;
-        selectedPeilfilterId.value = options.length > 0 ? options[0].value : null;
-      } else {
+      if (!newLocation) {
         selectedPeilfilterId.value = null;
-        peilfilterDataStore.clearData();
+        clearPanelDataStores();
+        return;
+      }
+      clearPanelDataStores();
+      const options = peilfilterOptions.value;
+      selectedPeilfilterId.value =
+        options.length > 0 ? options[0].value : null;
+      const idsStr = newLocation.properties?.peilfilter_ids;
+      const peilfilterIds = idsStr
+        ? commaSplit(idsStr)
+          .map((id) => Number(id))
+          .filter((n) => !Number.isNaN(n))
+        : [];
+      if (peilfilterIds.length > 0) {
+        depthInfoStore.fetchDepthInfo(peilfilterIds);
       }
     },
     { immediate: true }
   );
 
-  // Fetch peilfilter data when selectedPeilfilterId changes
+  /** Refetch when the map point or peilfilter dropdown changes (same id on two points still updates x/y). */
   watch(
-    () => selectedPeilfilterId.value,
-    (newId) => {
-      if (newId) {
-        peilfilterDataStore.fetchPeilfilterData(newId);
-      } else {
-        peilfilterDataStore.clearData();
+    [() => locationsStore.activeLocation, () => selectedPeilfilterId.value],
+    ([loc, newId]) => {
+      if (!loc) return;
+      syncPeilfilterDetailsFromLocation(loc, newId);
+      const x = loc.geometry?.coordinates?.[0];
+      const y = loc.geometry?.coordinates?.[1];
+      if (x == null || y == null) {
+        chartTimeseriesStore.clearData();
+        return;
       }
+      const pointId =
+        newId != null && newId !== "" ? newId : loc.properties?.locatie_id;
+      if (pointId == null || pointId === "") {
+        chartTimeseriesStore.clearData();
+        return;
+      }
+      chartTimeseriesStore.fetchTimeseriesData({ id: pointId, x, y });
     },
     { immediate: true }
   );
@@ -279,7 +357,6 @@
 
 .details {
   display: flex;
-  gap: 24px;
   height: 100%;
   padding: 24px 0;
   overflow: hidden;
@@ -300,6 +377,14 @@
 .details__table {
   flex: 0 0 auto;
   width: 500px;
+}
+
+.peilfilter__chart {
+  flex: 0 0 auto;
+  width: 250px;
+  overflow: hidden;
+  position: relative;
+  padding: 0 0;
 }
 
 .details__chart {

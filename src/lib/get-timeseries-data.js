@@ -1,30 +1,35 @@
 import sendWpsRequest from '@/lib/wps'
 
-export default async function getTimeseriesData (peilfilterId, startDate = '', endDate = '') {
-  if (!peilfilterId) {
-    throw new Error('No peilfilterId provided to getTimeseriesData')
+export default async function getTimeseriesData(pointinfo) {
+  if (!pointinfo || pointinfo.id == null || pointinfo.id === '') {
+    throw new Error('pointinfo.id is required for getTimeseriesData')
   }
-  const peilfilterinfo = {
-    peilfilterid: peilfilterId,
-    start_date: startDate,
-    end_date: endDate,
+  if (pointinfo.x == null || pointinfo.y == null) {
+    throw new Error('pointinfo.x and pointinfo.y are required for getTimeseriesData')
   }
-  try {
-    const response = await sendWpsRequest({
-      identifier: 'wps_get_peilfilter_data',
-      inputs: [ { id: 'peilfilterinfo', title: 'Peilfilterinfo as peilfilterId, StartDate and EndDate',
-        type: 'ComplexData', mimeType: 'application/json', value: peilfilterinfo } ],
-      outputIdentifier: 'peilfilter_data',
-      mimeType: 'application/json',
-    })
 
-    if (response.errMsg) {
-      throw new Error(response.errMsg)
-    }
+  const response = await sendWpsRequest({
+    identifier: 'wps_get_timeseries_data',
+    inputs: [
+      {
+        id: 'pointinfo',
+        title: 'point info as JSON: {\'id\', \'x\', \'y\'}',
+        type: 'ComplexData',
+        mimeType: 'application/json',
+        value: {
+          id: String(pointinfo.id),
+          x: Number(pointinfo.x),
+          y: Number(pointinfo.y),
+        },
+      },
+    ],
+    outputIdentifier: 'timeseries_data',
+    mimeType: 'application/json',
+  })
 
-    return response
-  } catch (error) {
-    console.error('Failed to fetch locations:', error)
-    throw error
+  if (response?.errMsg) {
+    throw new Error(response.errMsg)
   }
+
+  return response
 }
