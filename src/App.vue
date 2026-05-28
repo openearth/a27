@@ -67,7 +67,27 @@
         >
           <v-icon>mdi-chevron-down</v-icon>
         </v-btn>
-        <div class="details d-flex flex-row">
+        <div
+          v-if="isTreePanel"
+          class="details d-flex flex-row"
+        >
+          <div class="details__column tree__info">
+            <h3 class="text-h6">
+              Boom
+              {{
+                bomenLocationsStore.activeTree?.properties?.boomnaam || "..."
+              }}
+            </h3>
+            <div>Tree info</div>
+          </div>
+          <div class="details__column tree__graph">
+            <div>Graph</div>
+          </div>
+        </div>
+        <div
+          v-else
+          class="details d-flex flex-row"
+        >
           <div class="details__column details__table">
             <h3 class="text-h6">
               Details meetlocatie
@@ -163,6 +183,7 @@
   const peilfilterDataStore = usePeilfilterDataStore();
 
   const panelIsCollapsed = computed(() => appStore.panelIsCollapsed);
+  const isTreePanel = computed(() => !!bomenLocationsStore.activeTree);
 
   const viewMode = computed({
     get: () => appStore.viewMode,
@@ -386,6 +407,11 @@
   flex: 1 1 0;
   overflow: hidden;
   position: relative;
+}
+
+.tree__info,
+.tree__graph {
+  flex: 1 1 0;
 }
 
 .view-mode-toggle {

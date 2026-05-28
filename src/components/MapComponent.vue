@@ -201,6 +201,20 @@
 
     if (layerId === 'bomen-locations-layer') {
       if (appStore.disabledTrees) return
+      bomenLocationsStore.setActiveTree(feature)
+      locationsStore.setActiveLocation(null)
+      appStore.expandPanel()
+
+      const coords = feature.geometry.coordinates
+      const canvas = mapObj.getCanvas()
+      const offsetY = canvas.height * 0.25
+
+      mapObj.flyTo({
+        center: coords,
+        zoom: 12.5,
+        speed: 1.2,
+        offset: [0, -offsetY],
+      })
       return
     }
     if (layerId !== 'locations-layer') return
@@ -211,6 +225,7 @@
       return
     }
 
+    bomenLocationsStore.setActiveTree(null)
     locationsStore.setActiveLocation(feature)
     appStore.expandPanel()
 
@@ -232,7 +247,25 @@
     if (!mapObj) return
 
     if (layerId === 'bomen-locations-layer') {
+      // Ensure popup is initialized
+      if (!hoverPopup.value) {
+        hoverPopup.value = new mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          className: 'location-hover-popup',
+        })
+      }
+
+      const feature = e?.features?.[0]
+      if (!feature) return
+
       mapObj.getCanvas().style.cursor = appStore.disabledTrees ? 'grab' : 'pointer'
+      if (appStore.disabledTrees) return
+
+      const coords = feature.geometry.coordinates.slice()
+      const boomnaam = feature.properties?.boomnaam || 'Onbekend'
+      const htmlContent = `<div>Boom: <strong>${boomnaam}</strong></div>`
+      hoverPopup.value.setLngLat(coords).setHTML(htmlContent).addTo(mapObj)
       return
     }
     if (layerId !== 'locations-layer') return

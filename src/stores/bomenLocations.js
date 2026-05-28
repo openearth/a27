@@ -5,6 +5,7 @@ import { useAppStore } from '@/stores/app'
 export const useBomenLocationsStore = defineStore('bomenLocations', {
   state: () => ({
     bomenLocations: [],
+    activeTree: null,
   }),
 
   getters: {
@@ -78,6 +79,9 @@ export const useBomenLocationsStore = defineStore('bomenLocations', {
         console.error('Failed to fetch tree locations:', error)
         this.bomenLocations = []
       }
+    },
+    setActiveTree (feature) {
+      this.activeTree = feature ?? null
     },
   },
 })
