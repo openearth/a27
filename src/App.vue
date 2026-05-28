@@ -28,16 +28,17 @@
         <div class="legend-items">
           <div
             v-for="item in legendItems"
-            :key="item.bronId"
+            :key="item.key"
             class="legend-item"
             :class="{
-              'legend-item--disabled': appStore.disabledCategories.has(
-                item.bronId
-              ),
+              'legend-item--disabled': item.isTree
+                ? appStore.disabledTrees
+                : appStore.disabledCategories.has(item.bronId),
             }"
-            @click="appStore.toggleCategory(item.bronId)"
+            @click="onLegendItemClick(item)"
           >
             <div
+              v-if="!item.isTree"
               class="legend-symbol"
               :style="{
                 borderColor: appStore.disabledCategories.has(item.bronId)
@@ -45,6 +46,12 @@
                   : item.color,
                 opacity: appStore.disabledCategories.has(item.bronId) ? 0.5 : 1,
               }"
+            />
+            <v-icon
+              v-else
+              :color="appStore.disabledTrees ? '#9e9e9e' : item.color"
+              icon="mdi-tree"
+              size="16"
             />
             <span class="legend-text">{{ item.dataleverancier }}</span>
           </div>
@@ -144,6 +151,7 @@
   import { useAppStore } from "@/stores/app";
   import { useDepthInfoStore } from "@/stores/depthInfo";
   import { useLocationsStore } from "@/stores/locations";
+  import { useBomenLocationsStore } from "@/stores/bomenLocations";
   import { useChartTimeseriesStore } from "@/stores/chartTimeseries";
   import { usePeilfilterDataStore } from "@/stores/peilfilterData";
 
@@ -151,6 +159,7 @@
   const chartTimeseriesStore = useChartTimeseriesStore();
   const depthInfoStore = useDepthInfoStore();
   const locationsStore = useLocationsStore();
+  const bomenLocationsStore = useBomenLocationsStore();
   const peilfilterDataStore = usePeilfilterDataStore();
 
   const panelIsCollapsed = computed(() => appStore.panelIsCollapsed);
@@ -178,6 +187,7 @@
 
       if (bronId && dataleverancier && !uniqueProviders.has(bronId)) {
         uniqueProviders.set(bronId, {
+          key: `provider-${bronId}`,
           bronId,
           dataleverancier,
           color: getColorForBronId(bronId),
@@ -185,10 +195,30 @@
       }
     });
 
-    return Array.from(uniqueProviders.values()).sort(
+    const providers = Array.from(uniqueProviders.values()).sort(
       (a, b) => a.bronId - b.bronId
     );
+    if (bomenLocationsStore.bomenLocations?.length > 0) {
+      providers.push({
+        key: "trees",
+        bronId: null,
+        dataleverancier: "Bomen",
+        color: "#00a651",
+        isTree: true,
+      });
+    }
+    return providers;
   });
+
+  function onLegendItemClick(item) {
+    if (!item) return;
+    if (item.isTree) {
+      appStore.toggleTrees();
+      return;
+    }
+    if (item.bronId == null) return;
+    appStore.toggleCategory(item.bronId);
+  }
 
   function getColorForBronId(bronId) {
     const colors = {

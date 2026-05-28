@@ -22,6 +22,11 @@
         :id="'locations-layer'"
         :paint="locationsStore.computedPaint"
       />
+      <LayerPaintControl
+        v-if="bomenLocationsStore.bomenLocationsLayerConfig"
+        :id="'bomen-locations-layer'"
+        :paint="bomenLocationsStore.computedPaint"
+      />
       
       <MapboxNavigationControl 
         :show-compass="false" 
@@ -46,6 +51,7 @@
   import MapLayer from '@/components/MapLayer.vue'
   import LayerPaintControl from '@/components/LayerPaintControl.vue'
   import BasemapControl from '@/components/BasemapControl.vue'
+  import { useBomenLocationsStore } from '@/stores/bomenLocations'
   import { useLocationsStore } from '@/stores/locations'
   import { useMapStore } from '@/stores/map'
   import { useAppStore } from '@/stores/app'
@@ -53,6 +59,7 @@
 
   const accessToken = import.meta.env.VITE_MAPBOX_TOKEN
   const locationsStore = useLocationsStore()
+  const bomenLocationsStore = useBomenLocationsStore()
   const mapStore = useMapStore()
   const appStore = useAppStore()
   const mapInstance = ref(null)
@@ -60,6 +67,47 @@
   const mapboxLayers = computed(() => mapStore.mapboxLayers)
   const defaultMapStyle = computed(() => MAP_BASELAYER_DEFAULT.uri)
   const styleChangeCounter = ref(0) // Counter to force MapLayer re-render after style changes
+  const TREE_ICON_ID = 'tree-sdf-icon'
+
+  function createTreeSdfImageData(size = 32) {
+    const canvas = document.createElement('canvas')
+    canvas.width = size
+    canvas.height = size
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return null
+
+    ctx.clearRect(0, 0, size, size)
+    ctx.fillStyle = '#000'
+
+    // Crown (three overlapping circles)
+    ctx.beginPath()
+    ctx.arc(size * 0.38, size * 0.38, size * 0.16, 0, Math.PI * 2)
+    ctx.arc(size * 0.62, size * 0.38, size * 0.16, 0, Math.PI * 2)
+    ctx.arc(size * 0.5, size * 0.28, size * 0.18, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Lower crown taper
+    ctx.beginPath()
+    ctx.moveTo(size * 0.28, size * 0.5)
+    ctx.lineTo(size * 0.72, size * 0.5)
+    ctx.lineTo(size * 0.5, size * 0.7)
+    ctx.closePath()
+    ctx.fill()
+
+    // Trunk and small base
+    ctx.fillRect(size * 0.45, size * 0.66, size * 0.1, size * 0.22)
+    ctx.fillRect(size * 0.4, size * 0.86, size * 0.2, size * 0.06)
+
+    const { data } = ctx.getImageData(0, 0, size, size)
+    return { width: size, height: size, data }
+  }
+
+  function ensureTreeIcon(map) {
+    if (!map || map.hasImage(TREE_ICON_ID)) return
+    const imageData = createTreeSdfImageData()
+    if (!imageData) return
+    map.addImage(TREE_ICON_ID, imageData, { sdf: true })
+  }
 
   // Provide map instance for child components
   const map = computed(() => mapInstance.value)
@@ -67,6 +115,7 @@
 
   function onMapCreated(map) {
     mapInstance.value = map
+    ensureTreeIcon(map)
 
     // Create popup instance for hover
     hoverPopup.value = new mapboxgl.Popup({
@@ -77,6 +126,7 @@
 
     // Listen for style changes (when basemap is changed)
     map.on('style.load', () => {
+      ensureTreeIcon(map)
       // Increment counter to force MapLayer components to re-render with new keys
       styleChangeCounter.value++
     
@@ -100,10 +150,12 @@
 
     // Wait for initial style to load before adding sources/layers
     if (map.isStyleLoaded()) {
+      ensureTreeIcon(map)
       setupActiveLocationLayer()
       initializeMap()
     } else {
       map.once('style.load', () => {
+        ensureTreeIcon(map)
         setupActiveLocationLayer()
         initializeMap()
       })
@@ -112,7 +164,10 @@
 
   function initializeMap() {
     mapStore.initializeMapboxLayers()
-    locationsStore.fetchLocations().then(() => {
+    Promise.all([
+      locationsStore.fetchLocations(),
+      bomenLocationsStore.fetchBomenLocations(),
+    ]).then(() => {
       mapStore.refreshLayers()
     })
   }
@@ -141,9 +196,14 @@
 
   // Handle click on location layer
   function handleLayerClick(feature, layerId) {
-    // Only handle clicks on locations-layer
     const mapObj = mapInstance.value
-    if (layerId !== 'locations-layer' || !feature || !mapObj) return
+    if (!feature || !mapObj) return
+
+    if (layerId === 'bomen-locations-layer') {
+      if (appStore.disabledTrees) return
+      return
+    }
+    if (layerId !== 'locations-layer') return
 
     const bronId = feature.properties?.bron_id
     // Don't allow interaction if category is disabled
@@ -168,9 +228,14 @@
 
   // Handle mouseenter on location layer
   function handleLayerMouseenter(e, layerId) {
-    // Only handle hover on locations-layer
     const mapObj = mapInstance.value
-    if (layerId !== 'locations-layer' || !mapObj) return
+    if (!mapObj) return
+
+    if (layerId === 'bomen-locations-layer') {
+      mapObj.getCanvas().style.cursor = appStore.disabledTrees ? 'grab' : 'pointer'
+      return
+    }
+    if (layerId !== 'locations-layer') return
   
     // Ensure popup is initialized
     if (!hoverPopup.value) {
@@ -235,7 +300,7 @@
 
   // Handle mouseleave on location layer
   function handleLayerMouseleave(layerId) {
-    if (layerId !== 'locations-layer') return
+    if (layerId !== 'locations-layer' && layerId !== 'bomen-locations-layer') return
   
     const mapObj = mapInstance.value
     if (mapObj) {
@@ -283,7 +348,6 @@
       }, 100)
     }
   )
-
 
   // Setup direct map event listeners for locations-layer
   let locationsLayerListenersAttached = false
