@@ -68,6 +68,8 @@
   const defaultMapStyle = computed(() => MAP_BASELAYER_DEFAULT.uri)
   const styleChangeCounter = ref(0) // Counter to force MapLayer re-render after style changes
   const TREE_ICON_ID = 'tree-sdf-icon'
+  const TREE_ICON_SIZE = 1.15
+  const TREE_SELECTION_OUTLINE_SIZE = 1.55
 
   function createTreeSdfImageData(size = 32) {
     const canvas = document.createElement('canvas')
@@ -139,6 +141,7 @@
           // Small delay to ensure MapboxLayer components have time to clean up
           setTimeout(() => {
             setupActiveLocationLayer()
+            setupActiveTreeLayers()
             initializeMap()
           }, 50)
         } else {
@@ -152,11 +155,13 @@
     if (map.isStyleLoaded()) {
       ensureTreeIcon(map)
       setupActiveLocationLayer()
+      setupActiveTreeLayers()
       initializeMap()
     } else {
       map.once('style.load', () => {
         ensureTreeIcon(map)
         setupActiveLocationLayer()
+        setupActiveTreeLayers()
         initializeMap()
       })
     }
@@ -170,6 +175,80 @@
     ]).then(() => {
       mapStore.refreshLayers()
     })
+  }
+
+  function setupActiveTreeLayers() {
+    const mapObj = mapInstance.value
+    if (!mapObj || mapObj.getSource('active-tree')) return
+
+    mapObj.addSource('active-tree', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    })
+
+    mapObj.addLayer({
+      id: 'active-tree-outline-layer',
+      type: 'symbol',
+      source: 'active-tree',
+      layout: {
+        'icon-image': TREE_ICON_ID,
+        'icon-size': TREE_SELECTION_OUTLINE_SIZE,
+        'icon-allow-overlap': true,
+        'icon-padding': 0,
+      },
+      paint: {
+        'icon-color': '#ff0000',
+        'icon-opacity': 1,
+      },
+    })
+
+    mapObj.addLayer({
+      id: 'active-tree-layer',
+      type: 'symbol',
+      source: 'active-tree',
+      layout: {
+        'icon-image': TREE_ICON_ID,
+        'icon-size': TREE_ICON_SIZE,
+        'icon-allow-overlap': true,
+        'icon-padding': 0,
+      },
+      paint: {
+        'icon-color': '#00a651',
+        'icon-halo-color': '#ffffff',
+        'icon-halo-width': 0.8,
+        'icon-opacity': 1,
+      },
+    })
+  }
+
+  function updateActiveTreeSourceData() {
+    const mapObj = mapInstance.value
+    if (!mapObj?.getSource('active-tree')) return
+
+    const activeTree = bomenLocationsStore.activeTree
+    mapObj.getSource('active-tree').setData({
+      type: 'FeatureCollection',
+      features: activeTree ? [JSON.parse(JSON.stringify(activeTree))] : [],
+    })
+  }
+
+  function moveSelectionLayersToTop() {
+    const mapObj = mapInstance.value
+    if (!mapObj) return
+
+    try {
+      if (mapObj.getLayer('active-tree-outline-layer')) {
+        mapObj.moveLayer('active-tree-outline-layer')
+      }
+      if (mapObj.getLayer('active-tree-layer')) {
+        mapObj.moveLayer('active-tree-layer')
+      }
+      if (mapObj.getLayer('active-location-layer')) {
+        mapObj.moveLayer('active-location-layer')
+      }
+    } catch (e) {
+      console.log('Layer movement failed', e)
+    }
   }
 
   // Setup active-location layer for highlighting selected location
@@ -471,14 +550,7 @@
             setupLocationsLayerListeners()
             updateLocationsSourceData()
 
-            if (mapObj.getLayer('active-location-layer') && mapObj.getLayer('locations-layer')) {
-              try {
-                mapObj.moveLayer('active-location-layer')
-              } catch (e) {
-                console.log('Layer movement failed', e)
-              // Layer movement failed, but not critical
-              }
-            }
+            moveSelectionLayersToTop()
             setupInProgress = false // Clear flag on success
           } else {
             retryCount++
@@ -493,6 +565,15 @@
         setTimeout(checkAndSetup, 200)
       }
     }
+  )
+
+  watch(
+    () => bomenLocationsStore.activeTree,
+    () => {
+      updateActiveTreeSourceData()
+      moveSelectionLayersToTop()
+    },
+    { immediate: true }
   )
 
   // Watch for active location changes (handles active-location layer)

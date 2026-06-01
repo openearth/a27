@@ -69,6 +69,7 @@
         </v-btn>
         <div
           v-if="isTreePanel"
+          key="tree-panel"
           class="details d-flex flex-row"
         >
           <div class="details__column tree__info">
@@ -78,7 +79,22 @@
                 bomenLocationsStore.activeTree?.properties?.boomnaam || "..."
               }}
             </h3>
-            <div>Tree info</div>
+            <v-table>
+              <tbody>
+                <tr>
+                  <td>Boomnaam</td>
+                  <td>
+                    {{ boomDataStore.treeName ?? "..." }}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Soortgroep</td>
+                  <td>
+                    {{ boomDataStore.groupThatBelongs ?? "..." }}
+                  </td>
+                </tr>
+              </tbody>
+            </v-table>
           </div>
           <div class="details__column tree__graph">
             <div>Graph</div>
@@ -86,6 +102,7 @@
         </div>
         <div
           v-else
+          key="location-panel"
           class="details d-flex flex-row"
         >
           <div class="details__column details__table">
@@ -172,6 +189,7 @@
   import { useDepthInfoStore } from "@/stores/depthInfo";
   import { useLocationsStore } from "@/stores/locations";
   import { useBomenLocationsStore } from "@/stores/bomenLocations";
+  import { useBoomDataStore } from "@/stores/boomData";
   import { useChartTimeseriesStore } from "@/stores/chartTimeseries";
   import { usePeilfilterDataStore } from "@/stores/peilfilterData";
 
@@ -180,6 +198,7 @@
   const depthInfoStore = useDepthInfoStore();
   const locationsStore = useLocationsStore();
   const bomenLocationsStore = useBomenLocationsStore();
+  const boomDataStore = useBoomDataStore();
   const peilfilterDataStore = usePeilfilterDataStore();
 
   const panelIsCollapsed = computed(() => appStore.panelIsCollapsed);
@@ -286,6 +305,7 @@
     chartTimeseriesStore.clearData();
     peilfilterDataStore.clearData();
     depthInfoStore.clearData();
+    boomDataStore.clearData();
   }
 
   function commaSplit(str) {
@@ -294,13 +314,38 @@
   }
 
   watch(
+    () => bomenLocationsStore.activeTree,
+    (tree) => {
+      if (!tree) {
+        boomDataStore.clearData();
+        return;
+      }
+
+      const boomcode = tree.properties?.boomcode;
+      if (boomcode) {
+        boomDataStore.fetchBoomData(boomcode);
+      } else {
+        boomDataStore.clearData();
+      }
+    },
+    { immediate: true },
+  );
+
+  watch(
     () => locationsStore.activeLocation,
     (newLocation) => {
       if (!newLocation) {
         selectedPeilfilterId.value = null;
-        clearPanelDataStores();
+        if (!bomenLocationsStore.activeTree) {
+          clearPanelDataStores();
+        } else {
+          chartTimeseriesStore.clearData();
+          peilfilterDataStore.clearData();
+          depthInfoStore.clearData();
+        }
         return;
       }
+      bomenLocationsStore.setActiveTree(null);
       clearPanelDataStores();
       const options = peilfilterOptions.value;
       selectedPeilfilterId.value =
@@ -398,6 +443,8 @@
 .peilfilter__chart {
   flex: 0 0 auto;
   width: 250px;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
   position: relative;
   padding: 0 0;
@@ -405,13 +452,21 @@
 
 .details__chart {
   flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
   position: relative;
 }
 
-.tree__info,
+.tree__info {
+  flex: 0 0 auto;
+  width: 500px;
+}
+
 .tree__graph {
   flex: 1 1 0;
+  overflow: hidden;
+  position: relative;
 }
 
 .view-mode-toggle {

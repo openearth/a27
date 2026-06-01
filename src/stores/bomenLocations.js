@@ -9,6 +9,10 @@ export const useBomenLocationsStore = defineStore('bomenLocations', {
   }),
 
   getters: {
+    activeTreeId () {
+      return this.activeTree?.properties?.boom_id ?? null
+    },
+
     bomenLocationsFeatureCollection () {
       if (!this.bomenLocations?.length) {
         return { type: 'FeatureCollection', features: [] }
@@ -23,6 +27,7 @@ export const useBomenLocationsStore = defineStore('bomenLocations', {
     bomenLocationsLayerConfig () {
       const appStore = useAppStore()
       const featureCollection = this.bomenLocationsFeatureCollection
+      const activeTreeId = this.activeTreeId ?? -1
       if (!featureCollection.features?.length) return null
 
       return {
@@ -42,19 +47,35 @@ export const useBomenLocationsStore = defineStore('bomenLocations', {
           'icon-color': appStore.disabledTrees ? '#9e9e9e' : '#00a651',
           'icon-halo-color': '#ffffff',
           'icon-halo-width': 0.8,
-          'icon-opacity': appStore.disabledTrees ? 0.5 : 1,
+          'icon-opacity': [
+            'case',
+            [ '==', [ 'get', 'boom_id' ], activeTreeId ],
+            0,
+            appStore.disabledTrees,
+            0.5,
+            1,
+          ],
         },
       }
     },
 
     computedPaint () {
       const appStore = useAppStore()
+      const activeTreeId = this.activeTreeId ?? -1
+
       return {
         'icon-color': appStore.disabledTrees ? '#9e9e9e' : '#00a651',
         'icon-color-transition': { duration: 0, delay: 0 },
         'icon-halo-color': '#ffffff',
         'icon-halo-width': 0.8,
-        'icon-opacity': appStore.disabledTrees ? 0.5 : 1,
+        'icon-opacity': [
+          'case',
+          [ '==', [ 'get', 'boom_id' ], activeTreeId ],
+          0,
+          appStore.disabledTrees,
+          0.5,
+          1,
+        ],
         'icon-opacity-transition': { duration: 0, delay: 0 },
       }
     },

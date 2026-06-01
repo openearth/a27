@@ -24,6 +24,7 @@
 
   const chartRef = ref(null);
   let chartInstance = null;
+  let resizeObserver = null;
   const chartTimeseriesStore = useChartTimeseriesStore();
 
   const chartDataLoading = computed(() => chartTimeseriesStore.loading);
@@ -78,6 +79,10 @@
         ]
         : [{ ...SERIES_BASE, name: "Grondwaterstand", data: gwPoints }],
     });
+  }
+
+  function resizeChart() {
+    chartInstance?.resize();
   }
 
   function initChart() {
@@ -173,11 +178,19 @@
 
   onMounted(() => {
     initChart();
+    resizeChart();
+    if (chartRef.value) {
+      resizeObserver = new ResizeObserver(() => resizeChart());
+      resizeObserver.observe(chartRef.value);
+    }
   });
 
   onBeforeUnmount(() => {
+    resizeObserver?.disconnect();
+    resizeObserver = null;
     if (chartInstance) {
       chartInstance.dispose();
+      chartInstance = null;
     }
   });
 
@@ -189,7 +202,10 @@
     ],
     ([gw, precip, loading]) => {
       if (loading) return;
-      nextTick(() => updateChart(gw ?? [], precip ?? []));
+      nextTick(() => {
+        updateChart(gw ?? [], precip ?? []);
+        resizeChart();
+      });
     },
     { immediate: true }
   );
