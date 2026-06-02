@@ -97,7 +97,7 @@
             </v-table>
           </div>
           <div class="details__column tree__graph">
-            <div>Graph</div>
+            <TreeHealthChart />
           </div>
         </div>
         <div
@@ -185,6 +185,7 @@
   import { computed, ref, watch } from "vue";
   import PeilfilterGraph from "@/components/PeilfilterGraph.vue";
   import TimeSeriesChart from "@/components/TimeSeriesChart.vue";
+  import TreeHealthChart from "@/components/TreeHealthChart.vue";
   import { useAppStore } from "@/stores/app";
   import { useDepthInfoStore } from "@/stores/depthInfo";
   import { useLocationsStore } from "@/stores/locations";

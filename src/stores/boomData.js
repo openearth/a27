@@ -35,6 +35,36 @@ export const useBoomDataStore = defineStore('boomData', {
     groupThatBelongs (state) {
       return this.selectedTreeEntry?.group_that_belongs ?? null
     },
+
+    yAxisLabels (state) {
+      return state.data?.y_axis?.labels ?? []
+    },
+
+    yAxisMin (state) {
+      return state.data?.y_axis?.min ?? 0
+    },
+
+    yAxisMax (state) {
+      return state.data?.y_axis?.max ?? 8
+    },
+
+    treeTimeseries (state) {
+      return this.selectedTreeEntry?.timeseries ?? []
+    },
+
+    groupAverageEntry (state) {
+      const group = this.groupThatBelongs
+      const averages = state.data?.group_averages
+      if (!group || !Array.isArray(averages)) {
+        return null
+      }
+
+      return averages.find((entry) => entry.group === group) ?? null
+    },
+
+    groupAverageTimeseries (state) {
+      return this.groupAverageEntry?.timeseries ?? []
+    },
   },
 
   actions: {
