@@ -9,3 +9,20 @@ export const MAP_BASELAYERS = [
 ]
 
 export const MAP_BASELAYER_DEFAULT = MAP_BASELAYERS[0]
+
+export const TREE_COLOR = '#00a651'
+export const TREE_DISABLED_COLOR = '#9e9e9e'
+export const TREE_GROUP_AVG_COLOR = '#008fc5'
+export const TREE_SELECTION_COLOR = '#ff0000'
+
+export const DEFAULT_TREE_HEALTH_LABELS = [
+  'Dood',
+  'Bijna dood',
+  'Slecht',
+  'Matig-slecht',
+  'Matig',
+  'Voldoende-matig',
+  'Voldoende',
+  'Voldoende-goed',
+  'Goed',
+]

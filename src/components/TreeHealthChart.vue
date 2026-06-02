@@ -19,6 +19,11 @@
 <script setup>
   import * as echarts from 'echarts'
   import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+  import {
+    DEFAULT_TREE_HEALTH_LABELS,
+    TREE_COLOR,
+    TREE_GROUP_AVG_COLOR,
+  } from '@/lib/constants'
   import { useBoomDataStore } from '@/stores/boomData'
 
   const chartRef = ref(null)
@@ -28,17 +33,12 @@
 
   const chartDataLoading = computed(() => boomDataStore.loading)
 
-  const DEFAULT_HEALTH_LABELS = [
-    'Dood',
-    'Bijna dood',
-    'Slecht',
-    'Matig-slecht',
-    'Matig',
-    'Voldoende-matig',
-    'Voldoende',
-    'Voldoende-goed',
-    'Goed',
-  ]
+  const SCATTER_SERIES = {
+    type: 'scatter',
+    symbolSize: 8,
+    showSymbol: true,
+    animation: false,
+  }
 
   function formatDate (value) {
     const date = new Date(value)
@@ -63,9 +63,8 @@
     return getLabelAtIndex(labels, Math.round(num))
   }
 
-  /** Tooltip label: integers use one label; decimals use (floor ↔ ceil). */
   function formatTooltipHealthLabel (labels, value) {
-    const yLabels = labels.length > 0 ? labels : DEFAULT_HEALTH_LABELS
+    const yLabels = labels.length > 0 ? labels : DEFAULT_TREE_HEALTH_LABELS
     const num = Number(value)
     if (!Number.isFinite(num)) {
       return String(value ?? '–')
@@ -78,9 +77,7 @@
       return getLabelAtIndex(yLabels, floorIdx)
     }
 
-    const floorLabel = getLabelAtIndex(yLabels, floorIdx)
-    const topLabel = getLabelAtIndex(yLabels, ceilIdx)
-    return `(${floorLabel} ↔ ${topLabel})`
+    return `(${getLabelAtIndex(yLabels, floorIdx)} ↔ ${getLabelAtIndex(yLabels, ceilIdx)})`
   }
 
   function mapTimeseriesToPoints (timeseries) {
@@ -104,19 +101,27 @@
     return Boolean(el && el.clientWidth > 0 && el.clientHeight > 0)
   }
 
-  function updateChart (
-    timeseries,
-    groupTimeseries,
-    labels,
-    yMin,
-    yMax,
-    treeName,
-    groupName,
-  ) {
+  function buildScatterSeries (name, points, color) {
+    return {
+      ...SCATTER_SERIES,
+      name,
+      data: points,
+      itemStyle: { color },
+    }
+  }
+
+  function updateChart () {
     if (!chartInstance) return
 
-    const yLabels = labels.length > 0 ? labels : DEFAULT_HEALTH_LABELS
-    const treePoints = mapTimeseriesToPoints(timeseries)
+    const yLabels = boomDataStore.yAxisLabels.length > 0
+      ? boomDataStore.yAxisLabels
+      : DEFAULT_TREE_HEALTH_LABELS
+    const treeTimeseries = boomDataStore.treeTimeseries
+    const groupTimeseries = boomDataStore.groupAverageTimeseries
+    const treeName = boomDataStore.treeName
+    const groupName = boomDataStore.groupThatBelongs
+
+    const treePoints = mapTimeseriesToPoints(treeTimeseries)
     const groupPoints = mapTimeseriesToPoints(groupTimeseries)
     const treeSeriesName = treeName ?? 'Geselecteerde boom'
     const groupSeriesName = groupName
@@ -124,35 +129,17 @@
       : 'Groepsgemiddelde'
 
     const series = [
-      {
-        name: treeSeriesName,
-        type: 'scatter',
-        symbolSize: 8,
-        showSymbol: true,
-        animation: false,
-        data: treePoints,
-        itemStyle: { color: '#00a651' },
-      },
+      buildScatterSeries(treeSeriesName, treePoints, TREE_COLOR),
     ]
 
     if (groupPoints.length > 0) {
-      series.push({
-        name: groupSeriesName,
-        type: 'scatter',
-        symbolSize: 8,
-        showSymbol: true,
-        animation: false,
-        data: groupPoints,
-        itemStyle: { color: '#008fc5' },
-      })
+      series.push(buildScatterSeries(groupSeriesName, groupPoints, TREE_GROUP_AVG_COLOR))
     }
 
     chartInstance.setOption(
       {
         title: {
-          text: treeName
-            ? `Gezondheid boom ${treeName}`
-            : 'Gezondheid boom',
+          text: treeName ? `Gezondheid boom ${treeName}` : 'Gezondheid boom',
           top: 8,
           left: 0,
         },
@@ -178,7 +165,7 @@
               const value = Array.isArray(param.value) ? param.value[1] : param.value
               const sourceTimeseries = param.seriesName === groupSeriesName
                 ? groupTimeseries
-                : timeseries
+                : treeTimeseries
               const rawPoint = findPointAtDate(sourceTimeseries, dateValue)
               const label = rawPoint?.health_label
                 ?? formatTooltipHealthLabel(yLabels, value)
@@ -206,8 +193,8 @@
         },
         yAxis: {
           type: 'value',
-          min: yMin,
-          max: yMax,
+          min: boomDataStore.yAxisMin,
+          max: boomDataStore.yAxisMax,
           interval: 1,
           name: 'Gezondheid [-]',
           nameLocation: 'middle',
@@ -253,15 +240,7 @@
   function refreshChart () {
     nextTick(() => {
       if (!ensureChartReady()) return
-      updateChart(
-        boomDataStore.treeTimeseries,
-        boomDataStore.groupAverageTimeseries,
-        boomDataStore.yAxisLabels,
-        boomDataStore.yAxisMin,
-        boomDataStore.yAxisMax,
-        boomDataStore.treeName,
-        boomDataStore.groupThatBelongs,
-      )
+      updateChart()
       resizeChart()
     })
   }
@@ -291,22 +270,22 @@
   })
 
   watch(
-    () => [
-      boomDataStore.treeTimeseries,
-      boomDataStore.groupAverageTimeseries,
-      boomDataStore.yAxisLabels,
-      boomDataStore.yAxisMin,
-      boomDataStore.yAxisMax,
-      boomDataStore.treeName,
-      boomDataStore.groupThatBelongs,
-      boomDataStore.loading,
-    ],
-    (values) => {
-      const loading = values[7]
-      if (loading) return
-      refreshChart()
+    () => boomDataStore.data,
+    () => {
+      if (!boomDataStore.loading) {
+        refreshChart()
+      }
     },
     { deep: true },
+  )
+
+  watch(
+    () => boomDataStore.loading,
+    (loading) => {
+      if (!loading) {
+        refreshChart()
+      }
+    },
   )
 </script>
 

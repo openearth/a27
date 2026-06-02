@@ -193,6 +193,7 @@
   import { useBoomDataStore } from "@/stores/boomData";
   import { useChartTimeseriesStore } from "@/stores/chartTimeseries";
   import { usePeilfilterDataStore } from "@/stores/peilfilterData";
+  import { TREE_COLOR } from "@/lib/constants";
 
   const appStore = useAppStore();
   const chartTimeseriesStore = useChartTimeseriesStore();
@@ -219,7 +220,6 @@
   const legendItems = computed(() => {
     const uniqueProviders = new Map();
 
-    // locationsStore.locations is now an array, not a FeatureCollection
     const locations = locationsStore.locations || [];
     
     locations.forEach((location) => {
@@ -244,7 +244,7 @@
         key: "trees",
         bronId: null,
         dataleverancier: "Bomen",
-        color: "#00a651",
+        color: TREE_COLOR,
         isTree: true,
       });
     }
@@ -268,7 +268,7 @@
       3: "#ffc107",
       4: "#895129",
     };
-    return colors[bronId] || "#6c757d"; // Gray fallback
+    return colors[bronId] || "#6c757d";
   }
 
   const peilfilterOptions = computed(() => {
@@ -302,10 +302,14 @@
   const hasValidDLabel = computed(() => hasNonEmptyValue(peilfilterDataStore.dlabelFilter));
   const hasValidPompId = computed(() => hasNonEmptyValue(peilfilterDataStore.pompidFilter));
 
-  function clearPanelDataStores() {
+  function clearLocationPanelStores() {
     chartTimeseriesStore.clearData();
     peilfilterDataStore.clearData();
     depthInfoStore.clearData();
+  }
+
+  function clearAllPanelStores() {
+    clearLocationPanelStores();
     boomDataStore.clearData();
   }
 
@@ -315,39 +319,19 @@
   }
 
   watch(
-    () => bomenLocationsStore.activeTree,
-    (tree) => {
-      if (!tree) {
-        boomDataStore.clearData();
-        return;
-      }
-
-      const boomcode = tree.properties?.boomcode;
-      if (boomcode) {
-        boomDataStore.fetchBoomData(boomcode);
-      } else {
-        boomDataStore.clearData();
-      }
-    },
-    { immediate: true },
-  );
-
-  watch(
     () => locationsStore.activeLocation,
     (newLocation) => {
       if (!newLocation) {
         selectedPeilfilterId.value = null;
         if (!bomenLocationsStore.activeTree) {
-          clearPanelDataStores();
+          clearAllPanelStores();
         } else {
-          chartTimeseriesStore.clearData();
-          peilfilterDataStore.clearData();
-          depthInfoStore.clearData();
+          clearLocationPanelStores();
         }
         return;
       }
       bomenLocationsStore.setActiveTree(null);
-      clearPanelDataStores();
+      clearAllPanelStores();
       const options = peilfilterOptions.value;
       selectedPeilfilterId.value =
         options.length > 0 ? options[0].value : null;
