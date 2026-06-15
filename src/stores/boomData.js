@@ -28,11 +28,11 @@ export const useBoomDataStore = defineStore('boomData', {
       )
     },
 
-    treeName (state) {
+    treeName () {
       return this.selectedTreeEntry?.tree_name ?? null
     },
 
-    groupThatBelongs (state) {
+    groupThatBelongs () {
       return this.selectedTreeEntry?.group_that_belongs ?? null
     },
 
@@ -48,7 +48,7 @@ export const useBoomDataStore = defineStore('boomData', {
       return state.data?.y_axis?.max ?? 8
     },
 
-    treeTimeseries (state) {
+    treeTimeseries () {
       return this.selectedTreeEntry?.timeseries ?? []
     },
 
@@ -62,7 +62,7 @@ export const useBoomDataStore = defineStore('boomData', {
       return averages.find((entry) => entry.group === group) ?? null
     },
 
-    groupAverageTimeseries (state) {
+    groupAverageTimeseries () {
       return this.groupAverageEntry?.timeseries ?? []
     },
   },

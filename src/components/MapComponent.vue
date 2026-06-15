@@ -79,7 +79,7 @@
   const map = computed(() => mapInstance.value)
   provide('map', map)
 
-  function ensureHoverPopup (mapObj) {
+  function ensureHoverPopup () {
     if (!hoverPopup.value) {
       hoverPopup.value = new mapboxgl.Popup({
         closeButton: false,
@@ -115,7 +115,7 @@
   function onMapCreated (map) {
     mapInstance.value = map
     registerTreeSdfIcon(map)
-    ensureHoverPopup(map)
+    ensureHoverPopup()
 
     map.on('style.load', () => {
       registerTreeSdfIcon(map)
@@ -276,7 +276,7 @@
     const feature = e?.features?.[0]
     if (!feature) return
 
-    const popup = ensureHoverPopup(mapObj)
+    const popup = ensureHoverPopup()
 
     if (layerId === 'bomen-locations-layer') {
       mapObj.getCanvas().style.cursor = appStore.disabledTrees ? 'grab' : 'pointer'
