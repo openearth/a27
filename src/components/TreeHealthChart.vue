@@ -139,7 +139,7 @@
     chartInstance.setOption(
       {
         title: {
-          text: treeName ? `Gezondheid boom ${treeName}` : 'Gezondheid boom',
+          text: treeName ? `Conditie boom ${treeName}` : 'Conditie boom',
           top: 8,
           left: 0,
         },
@@ -196,7 +196,7 @@
           min: boomDataStore.yAxisMin,
           max: boomDataStore.yAxisMax,
           interval: 1,
-          name: 'Gezondheid [-]',
+          name: 'Conditie [-]',
           nameLocation: 'middle',
           nameGap: 110,
           nameTextStyle: { fontSize: 13 },

@@ -29,7 +29,7 @@
 
   const chartDataLoading = computed(() => chartTimeseriesStore.loading);
 
-  const Y_AXIS_GROUNDWATER = { type: "value", name: "Grondwaterstand [cm NAP]", nameLocation: "middle", nameGap: 50, nameTextStyle: { fontSize: 13 } };
+  const Y_AXIS_GROUNDWATER = { type: "value", name: "Stijghoogte [cm NAP]", nameLocation: "middle", nameGap: 50, nameTextStyle: { fontSize: 13 } };
   const Y_AXIS_PRECIP = { type: "value", name: "Neerslag [mm]", nameLocation: "middle", nameGap: 50, nameTextStyle: { fontSize: 13 }, position: "right" };
   const SERIES_BASE = { type: "scatter", symbolSize: 4, showSymbol: false, animation: false, progressive: 0 };
   const PRECIP_SERIES = { type: "bar", barWidth: 1.5, barMinHeight: 1, itemStyle: { color: "#4aa3ff" }, animation: false };
@@ -74,10 +74,10 @@
       yAxis: hasPrecip ? [Y_AXIS_GROUNDWATER, Y_AXIS_PRECIP] : Y_AXIS_GROUNDWATER,
       series: hasPrecip
         ? [
-          { ...SERIES_BASE, name: "Grondwaterstand", data: gwPoints, yAxisIndex: 0 },
+          { ...SERIES_BASE, name: "Stijghoogte", data: gwPoints, yAxisIndex: 0 },
           { ...PRECIP_SERIES, name: "Neerslag", data: precipPoints, yAxisIndex: 1 },
         ]
-        : [{ ...SERIES_BASE, name: "Grondwaterstand", data: gwPoints }],
+        : [{ ...SERIES_BASE, name: "Stijghoogte", data: gwPoints }],
     });
   }
 
@@ -95,7 +95,7 @@
       animationDuration: 0,
       animationDurationUpdate: 0,
       title: {
-        text: "Tijdserie grondwaterstanden",
+        text: "Tijdserie stijghoogte",
         top: 8,
         left: 0,
       },
@@ -165,14 +165,14 @@
       },
       yAxis: {
         type: "value",
-        name: "Grondwaterstand [cm NAP]",
+        name: "Stijghoogte [cm NAP]",
         nameLocation: "middle",
         nameGap: 50,
         nameTextStyle: {
           fontSize: 13,
         },
       },
-      series: [{ ...SERIES_BASE, name: "Grondwaterstand", data: [] }],
+      series: [{ ...SERIES_BASE, name: "Stijghoogte", data: [] }],
     });
   }
 
