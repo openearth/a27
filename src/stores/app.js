@@ -5,6 +5,7 @@ export const useAppStore = defineStore('app', {
   state: () => ({
     panelIsCollapsed: true,
     disabledCategories: new Set(),
+    disabledTrees: false,
     viewMode: 'focus', // 'all' or 'focus'
   }),
   actions: {
@@ -26,6 +27,9 @@ export const useAppStore = defineStore('app', {
         newSet.add(bronId)
       }
       this.disabledCategories = newSet
+    },
+    toggleTrees () {
+      this.disabledTrees = !this.disabledTrees
     },
     setViewMode (mode) {
       this.viewMode = mode

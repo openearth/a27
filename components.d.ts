@@ -16,5 +16,6 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     TimeSeriesChart: typeof import('./src/components/TimeSeriesChart.vue')['default']
+    TreeHealthChart: typeof import('./src/components/TreeHealthChart.vue')['default']
   }
 }

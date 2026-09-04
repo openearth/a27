@@ -25,6 +25,7 @@
 
   const chartRef = ref(null);
   let chartInstance = null;
+  let resizeObserver = null;
   const depthInfoStore = useDepthInfoStore();
   const peilfilterDataStore = usePeilfilterDataStore();
 
@@ -241,23 +242,39 @@
     chartInstance = echarts.init(chartRef.value);
   }
 
+  function resizeChart() {
+    chartInstance?.resize();
+  }
+
   const chartData = computed(() => mapDepthResponseToChartData(depthInfoStore.data));
 
   function refreshChart() {
     const data = chartData.value;
-    nextTick(() => updateChart(data, highlightedPeilfilterId.value));
+    nextTick(() => {
+      updateChart(data, highlightedPeilfilterId.value);
+      resizeChart();
+    });
   }
 
   onMounted(() => {
     initChart();
     refreshChart();
+    if (chartRef.value) {
+      resizeObserver = new ResizeObserver(() => resizeChart());
+      resizeObserver.observe(chartRef.value);
+    }
   });
 
   watch([chartData, highlightedPeilfilterId], () => {
     refreshChart();
   });
 
-  onBeforeUnmount(() => chartInstance?.dispose());
+  onBeforeUnmount(() => {
+    resizeObserver?.disconnect();
+    resizeObserver = null;
+    chartInstance?.dispose();
+    chartInstance = null;
+  });
 </script>
 
 <style scoped>
