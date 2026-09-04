@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia'
 import buildMapboxLayer from '@/lib/build-mapbox-layer'
 import { useLocationsStore } from '@/stores/locations'
+import { useBomenLocationsStore } from '@/stores/bomenLocations'
 
 export const useMapStore = defineStore('map', {
   state: () => ({
@@ -12,6 +13,7 @@ export const useMapStore = defineStore('map', {
   actions: {
     initializeMapboxLayers () {
       const locationsStore = useLocationsStore()
+      const bomenLocationsStore = useBomenLocationsStore()
       
       // Collect all layer configs
       const allLayerConfigs = []
@@ -20,6 +22,11 @@ export const useMapStore = defineStore('map', {
       const locationsLayerConfig = locationsStore.locationsLayerConfig
       if (locationsLayerConfig) {
         allLayerConfigs.push(locationsLayerConfig)
+      }
+
+      const bomenLocationsLayerConfig = bomenLocationsStore.bomenLocationsLayerConfig
+      if (bomenLocationsLayerConfig) {
+        allLayerConfigs.push(bomenLocationsLayerConfig)
       }
       
       // 2. Add static layers (WMS/WMTS from config files if needed in future)

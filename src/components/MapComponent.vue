@@ -16,11 +16,15 @@
         @mouseenter="(e) => handleLayerMouseenter(e, layer.id)"
         @mouseleave="() => handleLayerMouseleave(layer.id)"
       />
-      <!-- LayerPaintControl for locations-layer: reactively applies paint based on disabled categories -->
       <LayerPaintControl
         v-if="locationsStore.locationsLayerConfig"
-        :id="'locations-layer'"
+        id="locations-layer"
         :paint="locationsStore.computedPaint"
+      />
+      <LayerPaintControl
+        v-if="bomenLocationsStore.bomenLocationsLayerConfig"
+        id="bomen-locations-layer"
+        :paint="bomenLocationsStore.computedPaint"
       />
       
       <MapboxNavigationControl 
@@ -46,51 +50,81 @@
   import MapLayer from '@/components/MapLayer.vue'
   import LayerPaintControl from '@/components/LayerPaintControl.vue'
   import BasemapControl from '@/components/BasemapControl.vue'
+  import { useBomenLocationsStore } from '@/stores/bomenLocations'
   import { useLocationsStore } from '@/stores/locations'
   import { useMapStore } from '@/stores/map'
   import { useAppStore } from '@/stores/app'
-  import { MAP_BASELAYERS, MAP_BASELAYER_DEFAULT } from '@/lib/constants'
+  import {
+    MAP_BASELAYERS,
+    MAP_BASELAYER_DEFAULT,
+    TREE_COLOR,
+    TREE_SELECTION_COLOR,
+  } from '@/lib/constants'
+  import { registerTreeSdfIcon, TREE_ICON_ID } from '@/lib/tree-sdf-icon'
 
   const accessToken = import.meta.env.VITE_MAPBOX_TOKEN
   const locationsStore = useLocationsStore()
+  const bomenLocationsStore = useBomenLocationsStore()
   const mapStore = useMapStore()
   const appStore = useAppStore()
   const mapInstance = ref(null)
   const hoverPopup = ref(null)
   const mapboxLayers = computed(() => mapStore.mapboxLayers)
   const defaultMapStyle = computed(() => MAP_BASELAYER_DEFAULT.uri)
-  const styleChangeCounter = ref(0) // Counter to force MapLayer re-render after style changes
+  const styleChangeCounter = ref(0)
 
-  // Provide map instance for child components
+  const TREE_ICON_SIZE = 1.15
+  const TREE_SELECTION_OUTLINE_SIZE = 1.55
+
   const map = computed(() => mapInstance.value)
   provide('map', map)
 
-  function onMapCreated(map) {
-    mapInstance.value = map
+  function ensureHoverPopup () {
+    if (!hoverPopup.value) {
+      hoverPopup.value = new mapboxgl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        className: 'location-hover-popup',
+      })
+    }
+    return hoverPopup.value
+  }
 
-    // Create popup instance for hover
-    hoverPopup.value = new mapboxgl.Popup({
-      closeButton: false,
-      closeOnClick: false,
-      className: 'location-hover-popup',
+  function flyToFeature (mapObj, feature) {
+    const coords = feature.geometry.coordinates
+    const offsetY = mapObj.getCanvas().height * 0.25
+    mapObj.flyTo({
+      center: coords,
+      zoom: 12.5,
+      speed: 1.2,
+      offset: [0, -offsetY],
     })
+  }
 
-    // Listen for style changes (when basemap is changed)
+  function cloneFeature (feature) {
+    return JSON.parse(JSON.stringify(feature))
+  }
+
+  function setupMapAfterStyleLoad (map) {
+    registerTreeSdfIcon(map)
+    setupActiveLocationLayer()
+    setupActiveTreeLayers()
+    initializeMap()
+  }
+
+  function onMapCreated (map) {
+    mapInstance.value = map
+    registerTreeSdfIcon(map)
+    ensureHoverPopup()
+
     map.on('style.load', () => {
-      // Increment counter to force MapLayer components to re-render with new keys
+      registerTreeSdfIcon(map)
       styleChangeCounter.value++
-    
-      // Wait for style to be fully loaded before re-initializing layers
-      // MapboxLayer components need the style to be ready before they can add layers
+
       const waitForStyleReady = () => {
         if (map.isStyleLoaded()) {
-          // Clear existing layers from store to force re-render
           mapStore.mapboxLayers = []
-          // Small delay to ensure MapboxLayer components have time to clean up
-          setTimeout(() => {
-            setupActiveLocationLayer()
-            initializeMap()
-          }, 50)
+          setTimeout(() => setupMapAfterStyleLoad(map), 50)
         } else {
           setTimeout(waitForStyleReady, 50)
         }
@@ -98,27 +132,98 @@
       waitForStyleReady()
     })
 
-    // Wait for initial style to load before adding sources/layers
     if (map.isStyleLoaded()) {
-      setupActiveLocationLayer()
-      initializeMap()
+      setupMapAfterStyleLoad(map)
     } else {
-      map.once('style.load', () => {
-        setupActiveLocationLayer()
-        initializeMap()
-      })
+      map.once('style.load', () => setupMapAfterStyleLoad(map))
     }
   }
 
   function initializeMap() {
     mapStore.initializeMapboxLayers()
-    locationsStore.fetchLocations().then(() => {
+    Promise.all([
+      locationsStore.fetchLocations(),
+      bomenLocationsStore.fetchBomenLocations(),
+    ]).then(() => {
       mapStore.refreshLayers()
     })
   }
 
-  // Setup active-location layer for highlighting selected location
-  function setupActiveLocationLayer() {
+  function setupActiveTreeLayers() {
+    const mapObj = mapInstance.value
+    if (!mapObj || mapObj.getSource('active-tree')) return
+
+    mapObj.addSource('active-tree', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    })
+
+    mapObj.addLayer({
+      id: 'active-tree-outline-layer',
+      type: 'symbol',
+      source: 'active-tree',
+      layout: {
+        'icon-image': TREE_ICON_ID,
+        'icon-size': TREE_SELECTION_OUTLINE_SIZE,
+        'icon-allow-overlap': true,
+        'icon-padding': 0,
+      },
+      paint: {
+        'icon-color': TREE_SELECTION_COLOR,
+        'icon-opacity': 1,
+      },
+    })
+
+    mapObj.addLayer({
+      id: 'active-tree-layer',
+      type: 'symbol',
+      source: 'active-tree',
+      layout: {
+        'icon-image': TREE_ICON_ID,
+        'icon-size': TREE_ICON_SIZE,
+        'icon-allow-overlap': true,
+        'icon-padding': 0,
+      },
+      paint: {
+        'icon-color': TREE_COLOR,
+        'icon-halo-color': '#ffffff',
+        'icon-halo-width': 0.8,
+        'icon-opacity': 1,
+      },
+    })
+  }
+
+  function updateActiveTreeSourceData () {
+    const mapObj = mapInstance.value
+    if (!mapObj?.getSource('active-tree')) return
+
+    const activeTree = bomenLocationsStore.activeTree
+    mapObj.getSource('active-tree').setData({
+      type: 'FeatureCollection',
+      features: activeTree ? [cloneFeature(activeTree)] : [],
+    })
+  }
+
+  function moveSelectionLayersToTop() {
+    const mapObj = mapInstance.value
+    if (!mapObj) return
+
+    try {
+      if (mapObj.getLayer('active-tree-outline-layer')) {
+        mapObj.moveLayer('active-tree-outline-layer')
+      }
+      if (mapObj.getLayer('active-tree-layer')) {
+        mapObj.moveLayer('active-tree-layer')
+      }
+      if (mapObj.getLayer('active-location-layer')) {
+        mapObj.moveLayer('active-location-layer')
+      }
+    } catch (e) {
+      console.log('Layer movement failed', e)
+    }
+  }
+
+  function setupActiveLocationLayer () {
     const mapObj = mapInstance.value
     if (!mapObj || mapObj.getSource('active-location')) return
 
@@ -132,60 +237,61 @@
       source: 'active-location',
       paint: {
         'circle-color': '#fff',
-        'circle-radius': 5.5, // Slightly larger than normal points (which are 5)
-        'circle-stroke-width': 5, // Thick stroke to make red clearly visible
-        'circle-stroke-color': '#ff0000',
+        'circle-radius': 5.5,
+        'circle-stroke-width': 5,
+        'circle-stroke-color': TREE_SELECTION_COLOR,
       },
     })
   }
 
-  // Handle click on location layer
-  function handleLayerClick(feature, layerId) {
-    // Only handle clicks on locations-layer
+  function handleLayerClick (feature, layerId) {
     const mapObj = mapInstance.value
-    if (layerId !== 'locations-layer' || !feature || !mapObj) return
+    if (!feature || !mapObj) return
+
+    if (layerId === 'bomen-locations-layer') {
+      if (appStore.disabledTrees) return
+      bomenLocationsStore.setActiveTree(feature)
+      locationsStore.setActiveLocation(null)
+      appStore.expandPanel()
+      flyToFeature(mapObj, feature)
+      return
+    }
+    if (layerId !== 'locations-layer') return
 
     const bronId = feature.properties?.bron_id
-    // Don't allow interaction if category is disabled
     if (appStore.disabledCategories.has(bronId)) {
       return
     }
 
+    bomenLocationsStore.setActiveTree(null)
     locationsStore.setActiveLocation(feature)
     appStore.expandPanel()
-
-    const coords = feature.geometry.coordinates
-    const canvas = mapObj.getCanvas()
-    const offsetY = canvas.height * 0.25
-
-    mapObj.flyTo({
-      center: coords,
-      zoom: 12.5,
-      speed: 1.2,
-      offset: [0, -offsetY],
-    })
+    flyToFeature(mapObj, feature)
   }
 
-  // Handle mouseenter on location layer
-  function handleLayerMouseenter(e, layerId) {
-    // Only handle hover on locations-layer
+  function handleLayerMouseenter (e, layerId) {
     const mapObj = mapInstance.value
-    if (layerId !== 'locations-layer' || !mapObj) return
-  
-    // Ensure popup is initialized
-    if (!hoverPopup.value) {
-      hoverPopup.value = new mapboxgl.Popup({
-        closeButton: false,
-        closeOnClick: false,
-        className: 'location-hover-popup',
-      })
-    }
+    if (!mapObj) return
 
     const feature = e?.features?.[0]
     if (!feature) return
 
+    const popup = ensureHoverPopup()
+
+    if (layerId === 'bomen-locations-layer') {
+      mapObj.getCanvas().style.cursor = appStore.disabledTrees ? 'grab' : 'pointer'
+      if (appStore.disabledTrees) return
+
+      const boomnaam = feature.properties?.boomnaam || 'Onbekend'
+      popup
+        .setLngLat(feature.geometry.coordinates.slice())
+        .setHTML(`<div>Boom: <strong>${boomnaam}</strong></div>`)
+        .addTo(mapObj)
+      return
+    }
+    if (layerId !== 'locations-layer') return
+
     const hoverBronId = feature.properties?.bron_id
-    // Don't show hover if category is disabled
     if (appStore.disabledCategories.has(hoverBronId)) {
       mapObj.getCanvas().style.cursor = 'grab'
       return
@@ -207,7 +313,6 @@
       .sort((a, b) => Number(a.id) - Number(b.id))
       .map((item) => item.naam || item.id)
 
-    // Build HTML content for Locatie ID
     let locatieIdHtml = 'Locatie ID: '
     if (locatienaamMaster) {
       locatieIdHtml += `<strong>${locatienaamMaster}</strong>`
@@ -230,12 +335,11 @@
       htmlContent += `<div>${label}: ${ids}</div>`
     }
 
-    hoverPopup.value.setLngLat(coords).setHTML(htmlContent).addTo(mapObj)
+    popup.setLngLat(coords).setHTML(htmlContent).addTo(mapObj)
   }
 
-  // Handle mouseleave on location layer
-  function handleLayerMouseleave(layerId) {
-    if (layerId !== 'locations-layer') return
+  function handleLayerMouseleave (layerId) {
+    if (layerId !== 'locations-layer' && layerId !== 'bomen-locations-layer') return
   
     const mapObj = mapInstance.value
     if (mapObj) {
@@ -246,8 +350,7 @@
     }
   }
 
-  // Function to update locations layer source data with filtered locations
-  function updateLocationsSourceData() {
+  function updateLocationsSourceData () {
     const mapObj = mapInstance.value
     if (!mapObj || !mapObj.getLayer('locations-layer')) {
       return
@@ -266,7 +369,6 @@
   }
 
 
-  // Watch for locations changes and refresh layers
   watch(
     () => locationsStore.locations,
     () => {
@@ -274,7 +376,6 @@
     }
   )
 
-  // Watch for view mode changes and update layer source data
   watch(
     () => appStore.viewMode,
     () => {
@@ -284,11 +385,8 @@
     }
   )
 
-
-  // Setup direct map event listeners for locations-layer
   let locationsLayerListenersAttached = false
 
-  // Store handler references for cleanup
   const locationsLayerHandlers = {
     click: null,
     mouseenter: null,
@@ -301,7 +399,6 @@
       return false
     }
 
-    // Remove any existing listeners first
     if (locationsLayerHandlers.click) {
       mapObj.off('click', 'locations-layer', locationsLayerHandlers.click)
     }
@@ -312,7 +409,6 @@
       mapObj.off('mouseleave', 'locations-layer', locationsLayerHandlers.mouseleave)
     }
 
-    // Click handler
     locationsLayerHandlers.click = (e) => {
       const feature = e.features?.[0]
       if (feature) {
@@ -320,17 +416,14 @@
       }
     }
 
-    // Mouseenter handler
     locationsLayerHandlers.mouseenter = (e) => {
       handleLayerMouseenter(e, 'locations-layer')
     }
 
-    // Mouseleave handler
     locationsLayerHandlers.mouseleave = () => {
       handleLayerMouseleave('locations-layer')
     }
 
-    // Attach listeners
     mapObj.on('click', 'locations-layer', locationsLayerHandlers.click)
     mapObj.on('mouseenter', 'locations-layer', locationsLayerHandlers.mouseenter)
     mapObj.on('mouseleave', 'locations-layer', locationsLayerHandlers.mouseleave)
@@ -339,50 +432,36 @@
     return true
   }
 
-  // Watch for layer to be created and apply initial disabled categories state + setup listeners
   let retryCount = 0
-  const MAX_RETRIES = 50 // Maximum 5 seconds (50 * 100ms)
-  let setupInProgress = false // Flag to prevent concurrent setups
+  const MAX_RETRIES = 50
+  let setupInProgress = false
 
   watch(
     () => mapboxLayers.value.find(l => l.id === 'locations-layer'),
     (locationsLayer, oldLocationsLayer) => {
-      // Only reset if layer state actually changed (not found → found)
       const wasFound = !!oldLocationsLayer
       const isFound = !!locationsLayer
-    
+
       if (!wasFound && isFound) {
-        // Layer just appeared, reset flags
         locationsLayerListenersAttached = false
         retryCount = 0
-      } else if (wasFound && isFound) {
-        // Layer already existed, don't reset - might be a duplicate trigger
-        if (locationsLayerListenersAttached) {
-          return
-        }
+      } else if (wasFound && isFound && locationsLayerListenersAttached) {
+        return
       }
 
       if (locationsLayer && mapInstance.value && !setupInProgress) {
-        setupInProgress = true // Prevent concurrent setups
+        setupInProgress = true
         const checkAndSetup = () => {
           const mapObj = mapInstance.value
           const layerExists = mapObj?.getLayer('locations-layer')
           const styleLoaded = mapObj?.isStyleLoaded()
         
           if (layerExists && styleLoaded) {
-            retryCount = 0 // Reset on success
+            retryCount = 0
             setupLocationsLayerListeners()
             updateLocationsSourceData()
-
-            if (mapObj.getLayer('active-location-layer') && mapObj.getLayer('locations-layer')) {
-              try {
-                mapObj.moveLayer('active-location-layer')
-              } catch (e) {
-                console.log('Layer movement failed', e)
-              // Layer movement failed, but not critical
-              }
-            }
-            setupInProgress = false // Clear flag on success
+            moveSelectionLayersToTop()
+            setupInProgress = false
           } else {
             retryCount++
             if (retryCount >= MAX_RETRIES) {
@@ -398,36 +477,34 @@
     }
   )
 
-  // Watch for active location changes (handles active-location layer)
   watch(
-    () => locationsStore.activeLocation,
-    (activeLocation) => {
-      const mapObj = mapInstance.value
-      if (!mapObj || !mapObj.getSource('active-location')) return
-
-      if (activeLocation) {
-        const plainFeature = JSON.parse(JSON.stringify(activeLocation))
-        mapObj.getSource('active-location').setData({
-          type: 'FeatureCollection',
-          features: [plainFeature],
-        })
-      } else {
-        mapObj.getSource('active-location').setData({
-          type: 'FeatureCollection',
-          features: [],
-        })
-      }
+    () => bomenLocationsStore.activeTree,
+    () => {
+      updateActiveTreeSourceData()
+      moveSelectionLayersToTop()
     },
     { immediate: true }
   )
 
-  // Cleanup
+  watch(
+    () => locationsStore.activeLocation,
+    (activeLocation) => {
+      const mapObj = mapInstance.value
+      if (!mapObj?.getSource('active-location')) return
+
+      mapObj.getSource('active-location').setData({
+        type: 'FeatureCollection',
+        features: activeLocation ? [cloneFeature(activeLocation)] : [],
+      })
+    },
+    { immediate: true },
+  )
+
   onBeforeUnmount(() => {
     if (hoverPopup.value) {
       hoverPopup.value.remove()
     }
   
-    // Remove direct map listeners
     const mapObj = mapInstance.value
     if (mapObj && locationsLayerListenersAttached && mapObj.getLayer('locations-layer')) {
       if (locationsLayerHandlers.click) {

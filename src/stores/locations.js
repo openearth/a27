@@ -1,6 +1,7 @@
 // stores/locations.js
 import { defineStore } from 'pinia'
 import getLocationsData from '@/lib/get-locations-data'
+import { normalizeFeatureCollection } from '@/lib/normalize-feature-collection'
 import { useAppStore } from '@/stores/app'
 
 export const useLocationsStore = defineStore('locations', {
@@ -139,17 +140,10 @@ export const useLocationsStore = defineStore('locations', {
     async fetchLocations () {
       try {
         const data = await getLocationsData()
-        
-        // Handle both FeatureCollection and array of features
-        if (data.type === 'FeatureCollection' && data.features) {
-          // If FeatureCollection, extract features array for easier access
-          this.locations = data.features
-        } else if (Array.isArray(data)) {
-          // If already an array
-          this.locations = data
-        } else if (data.features && Array.isArray(data.features)) {
-          // If object with features property
-          this.locations = data.features
+        const features = normalizeFeatureCollection(data)
+
+        if (features) {
+          this.locations = features
         } else {
           console.warn('Unexpected locations data format:', data)
           this.locations = []

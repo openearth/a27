@@ -28,16 +28,17 @@
         <div class="legend-items">
           <div
             v-for="item in legendItems"
-            :key="item.bronId"
+            :key="item.key"
             class="legend-item"
             :class="{
-              'legend-item--disabled': appStore.disabledCategories.has(
-                item.bronId
-              ),
+              'legend-item--disabled': item.isTree
+                ? appStore.disabledTrees
+                : appStore.disabledCategories.has(item.bronId),
             }"
-            @click="appStore.toggleCategory(item.bronId)"
+            @click="onLegendItemClick(item)"
           >
             <div
+              v-if="!item.isTree"
               class="legend-symbol"
               :style="{
                 borderColor: appStore.disabledCategories.has(item.bronId)
@@ -45,6 +46,12 @@
                   : item.color,
                 opacity: appStore.disabledCategories.has(item.bronId) ? 0.5 : 1,
               }"
+            />
+            <v-icon
+              v-else
+              :color="appStore.disabledTrees ? '#9e9e9e' : item.color"
+              icon="mdi-tree"
+              size="16"
             />
             <span class="legend-text">{{ item.dataleverancier }}</span>
           </div>
@@ -60,7 +67,44 @@
         >
           <v-icon>mdi-chevron-down</v-icon>
         </v-btn>
-        <div class="details d-flex flex-row">
+        <div
+          v-if="isTreePanel"
+          key="tree-panel"
+          class="details d-flex flex-row"
+        >
+          <div class="details__column tree__info">
+            <h3 class="text-h6">
+              Boom
+              {{
+                bomenLocationsStore.activeTree?.properties?.boomnaam || "..."
+              }}
+            </h3>
+            <v-table>
+              <tbody>
+                <tr>
+                  <td>Boomnaam</td>
+                  <td>
+                    {{ boomDataStore.treeName ?? "..." }}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Soortgroep</td>
+                  <td>
+                    {{ boomDataStore.groupThatBelongs ?? "..." }}
+                  </td>
+                </tr>
+              </tbody>
+            </v-table>
+          </div>
+          <div class="details__column tree__graph">
+            <TreeHealthChart />
+          </div>
+        </div>
+        <div
+          v-else
+          key="location-panel"
+          class="details d-flex flex-row"
+        >
           <div class="details__column details__table">
             <h3 class="text-h6">
               Details meetlocatie
@@ -141,19 +185,26 @@
   import { computed, ref, watch } from "vue";
   import PeilfilterGraph from "@/components/PeilfilterGraph.vue";
   import TimeSeriesChart from "@/components/TimeSeriesChart.vue";
+  import TreeHealthChart from "@/components/TreeHealthChart.vue";
   import { useAppStore } from "@/stores/app";
   import { useDepthInfoStore } from "@/stores/depthInfo";
   import { useLocationsStore } from "@/stores/locations";
+  import { useBomenLocationsStore } from "@/stores/bomenLocations";
+  import { useBoomDataStore } from "@/stores/boomData";
   import { useChartTimeseriesStore } from "@/stores/chartTimeseries";
   import { usePeilfilterDataStore } from "@/stores/peilfilterData";
+  import { TREE_COLOR } from "@/lib/constants";
 
   const appStore = useAppStore();
   const chartTimeseriesStore = useChartTimeseriesStore();
   const depthInfoStore = useDepthInfoStore();
   const locationsStore = useLocationsStore();
+  const bomenLocationsStore = useBomenLocationsStore();
+  const boomDataStore = useBoomDataStore();
   const peilfilterDataStore = usePeilfilterDataStore();
 
   const panelIsCollapsed = computed(() => appStore.panelIsCollapsed);
+  const isTreePanel = computed(() => !!bomenLocationsStore.activeTree);
 
   const viewMode = computed({
     get: () => appStore.viewMode,
@@ -169,7 +220,6 @@
   const legendItems = computed(() => {
     const uniqueProviders = new Map();
 
-    // locationsStore.locations is now an array, not a FeatureCollection
     const locations = locationsStore.locations || [];
     
     locations.forEach((location) => {
@@ -178,6 +228,7 @@
 
       if (bronId && dataleverancier && !uniqueProviders.has(bronId)) {
         uniqueProviders.set(bronId, {
+          key: `provider-${bronId}`,
           bronId,
           dataleverancier,
           color: getColorForBronId(bronId),
@@ -185,10 +236,30 @@
       }
     });
 
-    return Array.from(uniqueProviders.values()).sort(
+    const providers = Array.from(uniqueProviders.values()).sort(
       (a, b) => a.bronId - b.bronId
     );
+    if (bomenLocationsStore.bomenLocations?.length > 0) {
+      providers.push({
+        key: "trees",
+        bronId: null,
+        dataleverancier: "Bomen",
+        color: TREE_COLOR,
+        isTree: true,
+      });
+    }
+    return providers;
   });
+
+  function onLegendItemClick(item) {
+    if (!item) return;
+    if (item.isTree) {
+      appStore.toggleTrees();
+      return;
+    }
+    if (item.bronId == null) return;
+    appStore.toggleCategory(item.bronId);
+  }
 
   function getColorForBronId(bronId) {
     const colors = {
@@ -197,7 +268,7 @@
       3: "#ffc107",
       4: "#895129",
     };
-    return colors[bronId] || "#6c757d"; // Gray fallback
+    return colors[bronId] || "#6c757d";
   }
 
   const peilfilterOptions = computed(() => {
@@ -231,10 +302,15 @@
   const hasValidDLabel = computed(() => hasNonEmptyValue(peilfilterDataStore.dlabelFilter));
   const hasValidPompId = computed(() => hasNonEmptyValue(peilfilterDataStore.pompidFilter));
 
-  function clearPanelDataStores() {
+  function clearLocationPanelStores() {
     chartTimeseriesStore.clearData();
     peilfilterDataStore.clearData();
     depthInfoStore.clearData();
+  }
+
+  function clearAllPanelStores() {
+    clearLocationPanelStores();
+    boomDataStore.clearData();
   }
 
   function commaSplit(str) {
@@ -247,10 +323,15 @@
     (newLocation) => {
       if (!newLocation) {
         selectedPeilfilterId.value = null;
-        clearPanelDataStores();
+        if (!bomenLocationsStore.activeTree) {
+          clearAllPanelStores();
+        } else {
+          clearLocationPanelStores();
+        }
         return;
       }
-      clearPanelDataStores();
+      bomenLocationsStore.setActiveTree(null);
+      clearAllPanelStores();
       const options = peilfilterOptions.value;
       selectedPeilfilterId.value =
         options.length > 0 ? options[0].value : null;
@@ -347,12 +428,27 @@
 .peilfilter__chart {
   flex: 0 0 auto;
   width: 250px;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
   position: relative;
   padding: 0 0;
 }
 
 .details__chart {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.tree__info {
+  flex: 0 0 auto;
+  width: 500px;
+}
+
+.tree__graph {
   flex: 1 1 0;
   overflow: hidden;
   position: relative;
